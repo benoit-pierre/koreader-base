@@ -4,6 +4,10 @@ list(APPEND PATCH_CMD COMMAND ${KO_PATCH}
     ${CMAKE_CURRENT_SOURCE_DIR}/sdcv-no-unknown-dict-warning.patch
     # Force UTF-8 command line parsing.
     ${CMAKE_CURRENT_SOURCE_DIR}/sdcv-locale-hack.patch
+    # Don't try create user config directory.
+    ${CMAKE_CURRENT_SOURCE_DIR}/no_confdir_mkdir.patch
+    # Better error traces and verbose option for debugging.
+    ${CMAKE_CURRENT_SOURCE_DIR}/traces.patch
 )
 
 string(APPEND GLIB2_INCLUDE_DIRS

@@ -1,0 +1,14 @@
+--- i/src/sdcv.cpp
++++ w/src/sdcv.cpp
+@@ -221,9 +221,11 @@
+         }
+     }
+ 
++#if 0
+     if (g_mkdir(conf_dir.c_str(), S_IRWXU) == -1 && errno != EEXIST) {
+         fprintf(stderr, _("g_mkdir failed: %s\n"), strerror(errno));
+     }
++#endif
+ 
+     Library lib(utf8_input, utf8_output, colorize, json_output, no_fuzzy);
+     lib.load(dicts_dir_list, order_list, disable_list);

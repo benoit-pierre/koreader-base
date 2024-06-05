@@ -1,0 +1,233 @@
+--- i/src/dictziplib.cpp
++++ w/src/dictziplib.cpp
+@@ -30,6 +30,8 @@
+ #endif
+ 
+ #include <cassert>
++#include <cerrno>
++#include <cstdint>
+ #include <cstdio>
+ #include <cstdlib>
+ #include <cstring>
+@@ -126,8 +127,7 @@
+     unsigned long offset;
+ 
+     if (!(str = fopen(fname.c_str(), "rb"))) {
+-        //err_fatal_errno( __FUNCTION__,
+-        //       "Cannot open data file \"%s\" for read\n", filename );
++        fprintf(stderr, "Failed to open %s: %s\n", fname.c_str(), strerror(errno));
+         return -1;
+     }
+ 
+@@ -269,13 +269,15 @@
+ bool DictData::open(const std::string &fname, int computeCRC)
+ {
+     struct stat sb;
+-    int fd;
+ 
+     this->initialized = 0;
+ 
++    errno = 0;
+     if (stat(fname.c_str(), &sb) || !S_ISREG(sb.st_mode)) {
+-        //err_warning( __FUNCTION__,
+-        //   "%s is not a regular file -- ignoring\n", fname );
++        if (errno)
++            fprintf(stderr, "Failed to stat %s: %s\n", fname.c_str(), strerror(errno));
++        else
++            fprintf(stderr, "Ignoring %s: not a regular file\n", fname.c_str());
+         return false;
+     }
+ 
+@@ -285,19 +287,7 @@
+         return false;
+     }
+ 
+-    if ((fd = ::open(fname.c_str(), O_RDONLY)) < 0) {
+-        //err_fatal_errno( __FUNCTION__,
+-        //       "Cannot open data file \"%s\"\n", fname );
+-        return false;
+-    }
+-    if (fstat(fd, &sb)) {
+-        //err_fatal_errno( __FUNCTION__,
+-        //       "Cannot stat data file \"%s\"\n", fname );
+-        return false;
+-    }
+-
+     this->size = sb.st_size;
+-    ::close(fd);
+     if (!mapfile.open(fname.c_str(), size))
+         return false;
+ 
+--- i/src/mapfile.hpp
++++ w/src/mapfile.hpp
+@@ -4,6 +4,10 @@
+ #include "config.h"
+ #endif
+ 
++#include <cerrno>
++#include <cstdint>
++#include <cstdio>
++#include <cstring>
+ #ifdef HAVE_MMAP
+ #include <fcntl.h>
+ #include <sys/mman.h>
+@@ -40,12 +43,18 @@
+ {
+ #ifdef HAVE_MMAP
+     if ((mmap_fd = ::open(file_name, O_RDONLY)) < 0) {
+-        // g_print("Open file %s failed!\n",fullfilename);
++        fprintf(stderr, "Failed to open %s: %s\n", file_name, strerror(errno));
+         return false;
+     }
+     struct stat st;
++    st.st_size = 0;
++    errno = 0;
+     if (fstat(mmap_fd, &st) == -1 || st.st_size < 0 || (st.st_size == 0 && S_ISREG(st.st_mode))
+         || st.st_size != file_size) {
++        if (errno)
++            fprintf(stderr, "Failed to stat %s: %s\n", file_name, strerror(errno));
++        else
++            fprintf(stderr, "Failed to stat %s: inconsistent size (%jd, expected %jd)\n", file_name, (intmax_t)st.st_size, (intmax_t)file_size);
+         close(mmap_fd);
+         return false;
+     }
+@@ -53,7 +62,7 @@
+     size = static_cast<size_t>(st.st_size);
+     data = (gchar *)mmap(nullptr, size, PROT_READ, MAP_SHARED, mmap_fd, 0);
+     if ((void *)data == (void *)(-1)) {
+-        // g_print("mmap file %s failed!\n",idxfilename);
++        fprintf(stderr, "Failed to mmap %s: %s\n", file_name, strerror(errno));
+         size = 0u;
+         data = nullptr;
+         return false;
+@@ -63,12 +72,18 @@
+     hFileMap = CreateFileMapping(hFile, nullptr, PAGE_READONLY, 0, file_size, nullptr);
+     data = (gchar *)MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, file_size);
+ #else
++    GError *gerror = NULL;
+     gsize read_len;
+-    if (!g_file_get_contents(file_name, &data, &read_len, nullptr))
++    if (!g_file_get_contents(file_name, &data, &read_len, &gerror)) {
++        fprintf(stderr, "Failed to read %s: %s\n", file_name, gerror->message);
++        g_error_free(gerror);
+         return false;
++    }
+ 
+-    if (read_len != file_size)
++    if (read_len != file_size) {
++        fprintf(stderr, "Failed to read %s: short read (%zu, expected %jd)\n", file_name, read_len, (intmax_t)file_size);
+         return false;
++    }
+ #endif
+ 
+     return true;
+--- i/src/sdcv.cpp
++++ w/src/sdcv.cpp
+@@ -75,6 +75,7 @@
+     textdomain("sdcv");
+ #endif
+ 
++    gboolean verbose = FALSE;
+     gboolean show_version = FALSE;
+     gboolean show_list_dicts = FALSE;
+     glib::StrArr use_dict_list;
+@@ -98,6 +99,8 @@
+     const GOptionEntry entries[] = {
+         { "version", 'v', 0, G_OPTION_ARG_NONE, &show_version,
+           _("display version information and exit"), nullptr },
++        { "verbose", 'V', 0, G_OPTION_ARG_NONE, &verbose,
++          _("display version information and exit"), nullptr },
+         { "list-dicts", 'l', 0, G_OPTION_ARG_NONE, &show_list_dicts,
+           _("display list of available dictionaries and exit"), nullptr },
+         { "use-dict", 'u', 0, G_OPTION_ARG_FILENAME_ARRAY, get_addr(use_dict_list),
+@@ -228,6 +231,7 @@
+ #endif
+ 
+     Library lib(utf8_input, utf8_output, colorize, json_output, no_fuzzy);
++    lib.setVerbose(verbose);
+     lib.load(dicts_dir_list, order_list, disable_list);
+ 
+     std::unique_ptr<IReadLine> io(create_readline_object());
+--- i/src/stardict_lib.cpp
++++ w/src/stardict_lib.cpp
+@@ -3,7 +3,9 @@
+ #endif
+ 
+ #include <algorithm>
++#include <cerrno>
+ #include <cctype>
++#include <cstdio>
+ #include <cstring>
+ #include <map>
+ #include <stdexcept>
+@@ -619,6 +621,8 @@
+ {
+     wordcount = wc;
+     gulong npages = (wc - 1) / ENTR_PER_PAGE + 2;
++    if (verbose)
++        fprintf(stderr, "Loading %s [%lu%+jd]\n", url.c_str(), wc, (intmax_t)fsize);
+     wordoffset.resize(npages);
+     if (!load_cache(url)) { // map file will close after finish of block
+         MapFile map_file;
+@@ -758,8 +762,10 @@
+     return bFound;
+ }
+ 
+-bool WordListIndex::load(const std::string &url, gulong wc, off_t fsize, bool)
++bool WordListIndex::load(const std::string &url, gulong wc, off_t fsize, bool verbose)
+ {
++    if (verbose)
++        fprintf(stderr, "Loading %s [%lu%+jd]\n", url.c_str(), wc, (intmax_t)fsize);
+     gzFile in = gzopen(url.c_str(), "rb");
+     if (in == nullptr)
+         return false;
+@@ -920,6 +926,8 @@
+ 
+ bool Dict::load(const std::string &ifofilename, bool verbose)
+ {
++    if (verbose)
++        fprintf(stderr, "Loading %s\n", ifofilename.c_str());
+     off_t idxfilesize;
+     if (!load_ifofile(ifofilename, idxfilesize))
+         return false;
+@@ -930,14 +938,14 @@
+     if (g_file_test(fullfilename.c_str(), G_FILE_TEST_EXISTS)) {
+         dictdzfile.reset(new DictData);
+         if (!dictdzfile->open(fullfilename, 0)) {
+-            // g_print("open file %s failed!\n",fullfilename);
++            fprintf(stderr, "Failed to open %s\n", fullfilename.c_str());
+             return false;
+         }
+     } else {
+         fullfilename.erase(fullfilename.length() - sizeof(".dz") + 1, sizeof(".dz") - 1);
+         dictfile = fopen(fullfilename.c_str(), "rb");
+         if (!dictfile) {
+-            // g_print("open file %s failed!\n",fullfilename);
++            fprintf(stderr, "Failed to open %s: %s\n", fullfilename.c_str(), strerror(errno));
+             return false;
+         }
+     }
+@@ -969,8 +977,10 @@
+     DictInfo dict_info;
+     if (!dict_info.load_from_ifo_file(ifofilename, false))
+         return false;
+-    if (dict_info.wordcount == 0)
++    if (dict_info.wordcount == 0) {
++        fprintf(stderr, "Zero word count in %s\n", ifofilename.c_str());
+         return false;
++    }
+ 
+     ifo_file_name = dict_info.ifo_file_name;
+     wordcount = dict_info.wordcount;
+@@ -1008,8 +1018,10 @@
+     Dict *lib = new Dict;
+     if (lib->load(url, verbose_))
+         oLib.push_back(lib);
+-    else
++    else {
++        fprintf(stderr, "Failed to load %s\n", url.c_str());
+         delete lib;
++    }
+ }
+ 
+ void Libs::load(const std::list<std::string> &dicts_dirs,
