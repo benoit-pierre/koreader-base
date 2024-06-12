@@ -1,4 +1,13 @@
-include Makefile.defs
+KOR_BASE ?= .
+
+# Are we being included?
+STANDALONE := $(if $(filter-out $(lastword $(MAKEFILE_LIST)),$(MAKEFILE_LIST)),,1)
+
+ifeq (,$(STANDALONE))
+  BASE_PREFIX = base-
+else
+  include $(KOR_BASE)/Makefile.defs
+endif
 
 # As we do not want to run parallel ninja invocations into the
 # same directory (e.g. when invoked with `make mupdf k2pdfopt`),
@@ -8,28 +17,29 @@ include Makefile.defs
 DO_STRIP := $(if $(or $(EMULATE_READER),$(KODEBUG)),,1)
 DO_STRIP := $(if $(or $(DO_STRIP),$(APPIMAGE),$(LINUX)),1,)
 
-$(info ************ Building for MACHINE: "$(MACHINE)" **********)
-$(info ************ PATH: "$(PATH)" **********)
-$(info ************ CHOST: "$(CHOST)" **********)
-$(info ************ NINJA: $(strip $(NINJA) $(PARALLEL_JOBS:%=-j%) $(PARALLEL_LOAD:%=-l%)) **********)
-$(info ************ MAKE: $(strip $(MAKE) $(PARALLEL_JOBS:%=-j%) $(PARALLEL_LOAD:%=-l%)) **********)
-
-PHONY = all bindeps clean distclean fetchthirdparty libcheck %-re re setup skeleton test test-data
-
-.PHONY: $(PHONY)
+PHONY += $(addprefix $(BASE_PREFIX),all clean distclean fetchthirdparty re test)
+PHONY += bindeps libcheck %-re setup skeleton test-data
+SOUND += cache-key build/% $(OUTPUT_DIR)/%
 
 # Main rules. {{{
 
-all: $(BUILD_ENTRYPOINT)
+$(BASE_PREFIX)all: $(BUILD_ENTRYPOINT)
 
-clean:
+$(BASE_PREFIX)clean:
 	rm -rf $(OUTPUT_DIR)
 
-distclean:
+$(BASE_PREFIX)distclean:
 	rm -rf build $(wildcard $(THIRDPARTY_DIR)/*/build)
 
-re: clean
-	$(MAKE) all
+info:
+	$(info ************ Building for MACHINE: "$(MACHINE)" **********)
+	$(info ************ PATH: "$(PATH)" **********)
+	$(info ************ CHOST: "$(CHOST)" **********)
+	$(info ************ NINJA: $(strip $(NINJA) $(PARALLEL_JOBS:%=-j%) $(PARALLEL_LOAD:%=-l%)) **********)
+	$(info ************ MAKE: $(strip $(MAKE) $(PARALLEL_JOBS:%=-j%) $(PARALLEL_LOAD:%=-l%)) **********)
+
+$(BASE_PREFIX)re: $(BASE_PREFIX)clean
+	$(MAKE) $(BASE_PREFIX)all
 
 %-re:
 	$(MAKE) $*-clean
@@ -37,7 +47,7 @@ re: clean
 
 setup: $(BUILD_ENTRYPOINT)
 
-fetchthirdparty:
+$(BASE_PREFIX)fetchthirdparty:
 	git submodule init
 	git submodule sync
 	git submodule update --jobs 3 $(if $(CI),--depth 1)
@@ -47,7 +57,7 @@ fetchthirdparty:
 # CMake build interface. {{{
 
 $(BUILD_ENTRYPOINT): $(CMAKE_KOVARS) $(CMAKE_TCF)
-	$(CMAKE) $(CMAKE_FLAGS) -S cmake -B $(CMAKE_DIR)
+	$(CMAKE) $(CMAKE_FLAGS) -S $(KOR_BASE)/cmake -B $(CMAKE_DIR)
 
 define newline
 
@@ -58,17 +68,17 @@ define escape
 '$(subst $(newline),' ',$(subst ','"'"',$(call $1)))'
 endef
 
-$(CMAKE_KOVARS): Makefile.defs | $(CMAKE_DIR)/
+$(CMAKE_KOVARS): $(KOR_BASE)/Makefile.defs | $(CMAKE_DIR)/
 	@printf '%s\n' $(call escape,cmake_koreader_vars) >'$@'
 
-$(CMAKE_TCF): Makefile.defs | $(CMAKE_DIR)/
+$(CMAKE_TCF): $(KOR_BASE)/Makefile.defs | $(CMAKE_DIR)/
 	@printf '%s\n' $(call escape,$(if $(EMULATE_READER),cmake_toolchain,cmake_cross_toolchain)) >'$@'
 
 # Forward unknown targets to the CMake build system.
-LEFTOVERS = $(filter-out $(PHONY) cache-key build/%,$(MAKECMDGOALS))
+LEFTOVERS = $(filter-out $(PHONY) $(SOUND),$(MAKECMDGOALS))
 .PHONY: $(LEFTOVERS)
-all $(LEFTOVERS): skeleton $(BUILD_ENTRYPOINT)
-	$(and $(DRY_RUN),$(wildcard $(BUILD_ENTRYPOINT)),+)$(strip $(CMAKE_MAKE_PROGRAM) -C $(CMAKE_DIR) $@)
+$(BASE_PREFIX)all $(LEFTOVERS): info skeleton $(BUILD_ENTRYPOINT)
+	$(and $(DRY_RUN),$(wildcard $(BUILD_ENTRYPOINT)),+)$(strip $(CMAKE_MAKE_PROGRAM) -C $(CMAKE_DIR) $(patsubst $(BASE_PREFIX)all,all,$@))
 
 # }}}
 
@@ -98,9 +108,12 @@ $(OUTPUT_DIR)/data/cr3.css: | $(OUTPUT_DIR)/data
 	$(SYMLINK) $(abspath $(THIRDPARTY_DIR)/kpvcrlib/cr3.css) $@
 
 $(OUTPUT_DIR)/ffi: | $(OUTPUT_DIR)/
-	$(SYMLINK) $(abspath ffi) $@
+	$(SYMLINK) $(abspath $(KOR_BASE)/ffi) $@
 
-build/%/:
+$(OUTPUT_DIR)/:
+	mkdir -p $@
+
+$(OUTPUT_DIR)/%/:
 	mkdir -p $@
 
 # }}}
@@ -110,12 +123,12 @@ build/%/:
 ifneq (,$(EMULATE_READER))
 
 $(OUTPUT_DIR)/.busted: | $(OUTPUT_DIR)/
-	$(SYMLINK) $(abspath .busted) $@
+	$(SYMLINK) $(abspath $(KOR_BASE)/.busted) $@
 
 $(OUTPUT_DIR)/spec/base: | $(OUTPUT_DIR)/spec/
-	$(SYMLINK) $(abspath spec) $@
+	$(SYMLINK) $(abspath $(KOR_BASE)/spec) $@
 
-test: all test-data
+$(BASE_PREFIX)test: $(BASE_PREFIX)all test-data
 	cd $(OUTPUT_DIR) && $(BUSTED_LUAJIT) ./spec/base/unit
 
 test-data: $(OUTPUT_DIR)/.busted $(OUTPUT_DIR)/data/tessdata/eng.traineddata $(OUTPUT_DIR)/spec/base $(OUTPUT_DIR)/fonts/droid/DroidSansMono.ttf
@@ -160,15 +173,15 @@ define cache_key_ignores
 ':!/utils/*'
 endef
 
-cache-key: Makefile
-	git ls-files -z $(strip $(cache_key_ignores)) | xargs -0 git ls-tree @ | tee $@
+cache-key: $(KOR_BASE)/Makefile
+	git -C $(KOR_BASE) ls-files -z $(strip $(cache_key_ignores)) | xargs -0 git -C $(KOR_BASE) ls-tree @ | tee $@
 
 # }}}
 
 # Dump binaries runtime path and dependencies. {{{
 
 bindeps:
-	@./utils/bindeps.sh $(filter-out $(addprefix $(OUTPUT_DIR)/,cmake staging thirdparty),$(wildcard $(OUTPUT_DIR)/*))
+	@$(KOR_BASE)/utils/bindeps.sh $(filter-out $(addprefix $(OUTPUT_DIR)/,cmake staging thirdparty),$(wildcard $(OUTPUT_DIR)/*))
 
 # }}}
 
@@ -177,14 +190,16 @@ bindeps:
 # NOTE: the extra `$(filter %/,…)` is to work around some older versions
 # of make (e.g. 4.2.1) returning files too when using `$(wildcard …/*/)`.
 libcheck:
-	@./utils/libcheck.sh $(CC) $(LDFLAGS) -Wl,-rpath-link=$(OUTPUT_DIR)/libs -- '$(if $(USE_LUAJIT_LIB),,1)' $(filter %/,$(filter-out $(OUTPUT_DIR)/thirdparty/,$(wildcard $(OUTPUT_DIR)/*/)))
+	@$(KOR_BASE)/utils/libcheck.sh $(CC) $(LDFLAGS) -Wl,-rpath-link=$(OUTPUT_DIR)/libs -- '$(if $(USE_LUAJIT_LIB),,1)' $(filter %/,$(filter-out $(OUTPUT_DIR)/thirdparty/,$(wildcard $(OUTPUT_DIR)/*/)))
 
 ifneq (,$(POCKETBOOK))
-libcheck: utils/libcheck/libinkview.so
-utils/libcheck/libinkview.so: utils/libcheck/libinkview.ld
+libcheck: $(KOR_BASE)/utils/libcheck/libinkview.so
+$(KOR_BASE)/utils/libcheck/libinkview.so: $(KOR_BASE)/utils/libcheck/libinkview.ld
 	$(LD) -shared -o $@ $<
 endif
 
 # }}}
+
+.PHONY: $(PHONY)
 
 # vim: foldmethod=marker foldlevel=0
