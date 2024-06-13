@@ -18,7 +18,7 @@ DO_STRIP := $(if $(or $(EMULATE_READER),$(KODEBUG)),,1)
 DO_STRIP := $(if $(or $(DO_STRIP),$(APPIMAGE),$(LINUX)),1,)
 
 PHONY += $(addprefix $(BASE_PREFIX),all clean distclean fetchthirdparty re test)
-PHONY += bindeps libcheck %-re setup skeleton test-data
+PHONY += bindeps buildstats libcheck %-re setup skeleton test-data
 SOUND += cache-key build/% $(OUTPUT_DIR)/%
 
 # Main rules. {{{
@@ -175,6 +175,19 @@ endef
 
 cache-key: $(KOR_BASE)/Makefile
 	git -C $(KOR_BASE) ls-files -z $(strip $(cache_key_ignores)) | xargs -0 git -C $(KOR_BASE) ls-tree @ | tee $@
+
+# }}}
+
+# Dump target timings for last ninja invocation. {{{
+
+# Show external project tasks with a duration of 1s or more (descending order).
+define buildstats_jq_script
+  sort_by(-.dur) | .[] | select(.dur >= 1e6) | (.dur*1e-5 | round | ./10), "\t",
+  (.name | sub(".*/(?<p>[^/]*).*[/-](?<t>[^/]*)$$"; "\(.p) \(.t)")), "\n"
+endef
+
+buildstats: $(CMAKE_DIR)/.ninja_log
+	ninjatracing $< | jq -j '$(strip $(buildstats_jq_script))' | git column --mode=row
 
 # }}}
 
