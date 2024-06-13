@@ -4,6 +4,9 @@ set(BINARY_DIR ${SOURCE_DIR})
 list(APPEND PATCH_CMD COMMAND ${KO_PATCH} ${CMAKE_CURRENT_SOURCE_DIR}/koreader-luajit-makefile-tweaks.patch)
 # Enable table.pack & table.unpack w/o the rest of the -DLUAJIT_ENABLE_LUA52COMPAT baggage...
 list(APPEND PATCH_CMD COMMAND ${KO_PATCH} ${CMAKE_CURRENT_SOURCE_DIR}/koreader-luajit-enable-table_pack.patch)
+if(ANDROID_LAUNCHER_DIR)
+    list(APPEND PATCH_CMD COMMAND ${KO_PATCH} ${ANDROID_LAUNCHER_DIR}/jni/luajit/koreader-luajit-mcode-reserve-hack.patch)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
     # Debugging is a go!

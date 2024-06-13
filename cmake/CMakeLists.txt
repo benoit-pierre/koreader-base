@@ -261,6 +261,11 @@ declare_project(thirdparty/lua-Spore)
 # luajit
 declare_project(thirdparty/luajit)
 
+# luajit-launcher
+if(ANDROID_LAUNCHER_DIR)
+    declare_project(thirdparty/luajit-launcher DEPENDS luajit SOURCE_DIR ${ANDROID_LAUNCHER_DIR})
+endif()
+
 # luajson
 declare_project(thirdparty/luajson)
 

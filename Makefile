@@ -161,20 +161,20 @@ endif
 
 # CI helpers. {{{
 
-define cache_key_ignores
-':!*.lua'
-':!*/.*'
-':!/.*'
-':!/COPYING'
-':!/README.md'
-':!/ffi-cdecl/*'
-':!/spec/*'
-':!/toolchain/*'
-':!/utils/*'
+define cache_key_cmd
+git -C $1 ls-files -z
+--cached --ignored --exclude-from=$(abspath $2)
+| xargs -0 git -C $1 ls-tree @
 endef
 
-cache-key: $(KOR_BASE)/Makefile
-	git -C $(KOR_BASE) ls-files -z $(strip $(cache_key_ignores)) | xargs -0 git -C $(KOR_BASE) ls-tree @ | tee $@
+cache_key_dir_base = $(KOR_BASE)
+cache_key_dir_android-launcher = $(ANDROID_LAUNCHER_DIR)
+cache_key_parts = base $(if $(ANDROID_LAUNCHER_DIR),android-launcher)
+
+cache-key: $(KOR_BASE)/Makefile $(addprefix $(KOR_BASE)/cache-key.,$(cache_key_parts))
+	{ $(strip $(foreach p,$(cache_key_parts), \
+	  $(call cache_key_cmd,$(call cache_key_dir_$p),$(KOR_BASE)/cache-key.$p,$p); \
+	  )) } | tee $@
 
 # }}}
 

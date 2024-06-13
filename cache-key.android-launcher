@@ -1,0 +1,9 @@
+# Includes.
+*.[ch]
+*.cpp
+/jni/lzma/7z
+
+# Excludes.
+!/ffi-cdecl/*
+
+# vim: ft=gitignore
