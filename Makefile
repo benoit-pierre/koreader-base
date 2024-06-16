@@ -1,3 +1,7 @@
+ifeq (,$(V)$(VERBOSE))
+.SILENT:
+endif
+
 KOR_BASE ?= .
 
 # Are we being included?
