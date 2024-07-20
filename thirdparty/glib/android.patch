@@ -1,0 +1,70 @@
+--- i/glib/gthreadprivate.h
++++ w/glib/gthreadprivate.h
+@@ -67,7 +67,7 @@ struct  _GRealThread
+  * This must not be called with a timeout parameter as that differs
+  * in size between the two syscall variants!
+  */
+-#if defined(__NR_futex) && defined(__NR_futex_time64)
++#if defined(HAVE_FUTEX) && defined(HAVE_FUTEX_TIME64)
+ #define g_futex_simple(uaddr, futex_op, ...)                                     \
+   G_STMT_START                                                                   \
+   {                                                                              \
+@@ -84,7 +84,7 @@ struct  _GRealThread
+       }                                                                          \
+   }                                                                              \
+   G_STMT_END
+-#elif defined(__NR_futex_time64)
++#elif defined(HAVE_FUTEX_TIME64)
+ #define g_futex_simple(uaddr, futex_op, ...)                                     \
+   G_STMT_START                                                                   \
+   {                                                                              \
+@@ -96,7 +96,7 @@ struct  _GRealThread
+       }                                                                          \
+   }                                                                              \
+   G_STMT_END
+-#elif defined(__NR_futex)
++#elif defined(HAVE_FUTEX)
+ #define g_futex_simple(uaddr, futex_op, ...)                              \
+   G_STMT_START                                                            \
+   {                                                                       \
+@@ -108,9 +108,7 @@ struct  _GRealThread
+       }                                                                   \
+   }                                                                       \
+   G_STMT_END
+-#else /* !defined(__NR_futex) && !defined(__NR_futex_time64) */
+-#error "Neither __NR_futex nor __NR_futex_time64 are defined but were found by meson"
+-#endif /* defined(__NR_futex) && defined(__NR_futex_time64) */
++#endif /* defined(HAVE_FUTEX) && defined(HAVE_FUTEX_TIME64) */
+ 
+ #endif
+ 
+--- i/meson.build
++++ w/meson.build
+@@ -661,7 +661,6 @@ functions = [
+   'copy_file_range',
+   'endmntent',
+   'endservent',
+-  'epoll_create',
+   'fallocate',
+   'fchmod',
+   'fchown',
+@@ -782,6 +781,10 @@ foreach f : functions
+   endif
+ endforeach
+ 
++if cc.has_function('epoll_create1')
++  glib_conf.set('HAVE_EPOLL_CREATE', 1)
++endif
++
+ # Export the information about free_sized() so we can correctly define a macro
+ # wrapper around g_free()/g_free_sized() depending on whether it’s available
+ glibconfig_conf.set('G_HAVE_FREE_SIZED', have_func_free_sized)
+@@ -988,7 +991,7 @@ if cc.compiles('''#include <linux/futex.h>
+                }''', name : 'futex(2) system call')
+   glib_conf.set('HAVE_FUTEX', 1)
+ endif
+-if cc.compiles('''#include <linux/futex.h>
++if host_machine.system() != 'android' and cc.compiles('''#include <linux/futex.h>
+                #include <sys/syscall.h>
+                #include <unistd.h>
+                int main (int argc, char ** argv) {
