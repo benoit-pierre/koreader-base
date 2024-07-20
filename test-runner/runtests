@@ -1,0 +1,155 @@
+#!/bin/bash
+
+set -eo pipefail
+# set -x
+
+origdir="$(pwd -P)"
+busted_args=(--config-file=spec/config.lua --exclude-tags=notest)
+kodir="$(cd "$(dirname "$0")/.." && pwd -P)"
+suite='all'
+
+if [[ $# -ne 0 && "$1" != -* ]]; then
+    suite="$1"
+    shift
+fi
+
+if which meson >/dev/null 2>&1; then
+
+    runtests() {
+        local arg
+        local output
+        local -a test_args=()
+        case "${suite}" in
+            all) ;;
+            bench) test_args+=(--benchmark) ;;
+            *) test_args+=(--suite="${suite}") ;;
+        esac
+        while [[ $# -ne 0 ]]; do
+            case "$1" in
+                -g) test_args+=(--gdb) ;;
+                -j)
+                    shift
+                    test_args+=(--num-processes="$1")
+                    ;;
+                -j*) test_args+=(--num-processes="${1#-j}") ;;
+                -l) test_args+=(--list) ;;
+                -o)
+                    shift
+                    output="$1"
+                    if [[ "${output}" = [^/]* ]]; then
+                        output="${origdir}/${output}"
+                    fi
+                    ;;
+                -q) test_args+=(--quiet) ;;
+                -r)
+                    shift
+                    test_args+=(--repeat="$1")
+                    ;;
+                -r*) test_args+=(--repeat="${1#-r}") ;;
+                -t)
+                    shift
+                    test_args+=(--timeout-multiplier="$1")
+                    ;;
+                -t*) test_args+=(--timeout-multiplier="${1#-t}") ;;
+                -v) test_args+=(--verbose) ;;
+                -w)
+                    shift
+                    test_args+=(--wrapper="$1")
+                    ;;
+                -*) busted_args+=("$1") ;;
+                *) test_args+=("$1") ;;
+            esac
+            shift
+        done
+        local error
+        rm -rf spec/.run
+        error="$(meson setup --backend=none --prefix="${PWD}" spec/.run spec)" || {
+            local code=$?
+            printf '%s\n' "${error}" 1>&2
+            exit ${code}
+        }
+        local -a cmd=(
+            meson test
+            -C spec/.run
+            --print-errorlogs
+        )
+        arg="$(printf '%q ' "${busted_args[@]}")"
+        cmd+=(--test-args="${arg% }" "${test_args[@]}")
+        printf '%q ' "${cmd[@]}"
+        echo
+        set +e
+        if [[ "${CI}" = 'true' ]]; then
+            # Strip fancy progress output from meson.
+            "${cmd[@]}" | cat
+        else
+            "${cmd[@]}"
+        fi
+        code=$?
+        if [[ -n "${output}" ]]; then
+            cp "${kodir}/spec/.run/meson-logs/testlog.junit.xml" "${output}"
+        fi
+        return ${code}
+    }
+
+else
+
+    runtests() {
+        local arg
+        local wrapper
+        local -a busted_output=(--output=gtest)
+        busted_args+=(--sort-files)
+        while [[ $# -ne 0 ]]; do
+            case "$1" in
+                -g) wrapper='gdb --args' ;;
+                -[jt]) shift ;;
+                -[jt]*) ;;
+                -o)
+                    shift
+                    local output="$1"
+                    if [[ "${output}" = [^/]* ]]; then
+                        output="${origdir}/${output}"
+                    fi
+                    busted_output=(--output=junit -Xoutput "${output}")
+                    ;;
+                -q) ;;
+                -r)
+                    shift
+                    busted_args+=(--repeat="$1")
+                    ;;
+                -r*) busted_args+=(--repeat="${1#-r}") ;;
+                -w)
+                    shift
+                    wrapper="$1"
+                    ;;
+                *) busted_args+=("$1") ;;
+            esac
+            shift
+        done
+        find -L spec -name '*.sdr' -print0 | xargs -0 rm -rf
+        # shellcheck disable=2206
+        local -a cmd=(
+            # Don't fail the testsuite on ASAN detected leaks.
+            env LSAN_OPTIONS="${LSAN_OPTIONS:-exitcode=0}"
+            ${wrapper}
+            ./luajit -e 'require "busted.runner" {standalone = false}' /dev/null
+        )
+        if [[ "${suite}" = 'bench' ]]; then
+            cmd+=('--pattern=_bench')
+            suite='all'
+        fi
+        cmd+=("--run=${suite}" "${busted_output[@]}" "${busted_args[@]}")
+        printf '%q ' "${cmd[@]}"
+        echo
+        "${cmd[@]}"
+    }
+
+fi
+
+if [[ -z "${TESSDATA_PREFIX}" ]]; then
+    export TESSDATA_PREFIX="${kodir}/data"
+fi
+
+cd "${kodir}"
+runtests "$@"
+
+# vim: sw=4

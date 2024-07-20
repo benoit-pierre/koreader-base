@@ -1021,19 +1021,17 @@ endif
 
 ifneq (,$(EMULATE_READER))
 
-define busted_fn
-busted() {(
+define runtests_fn
+runtests() {(
+kodir="$$1";
+suite="$$2";
+shift 2;
 eval "$$($(LUAROCKS_BINARY) path)";
-export TESSDATA_DIR="$$PWD/data";
-./luajit -e 'require "busted.runner" {standalone = false}' /dev/null
---exclude-tags=notest
---output=gtest
---sort-files
-"$$@";
+"$$kodir/spec/runtests" "$$suite" $(PARALLEL_JOBS:%=-j%) "$$@";
 )}
 endef
 
-BUSTED_LUAJIT = $(strip $(busted_fn)); busted
+RUNTESTS = $(strip $(runtests_fn)); runtests
 
 endif
 
