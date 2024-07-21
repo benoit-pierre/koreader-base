@@ -122,6 +122,30 @@ set(MESON_INSTALL ${MESON} install --no-rebuild)
 
 # }}}
 
+# Linters (optional). {{{
+
+find_program(HAS_CLANG_TIDY clang-tidy)
+if(HAS_CLANG_TIDY)
+    add_custom_target(clang-tidy)
+    set(CLANGTIDY_CMD run_clang_tidy -p .)
+endif()
+
+find_program(HAS_CPPCHECK cppcheck)
+if(HAS_CPPCHECK)
+    add_custom_target(cppcheck)
+    set(CPPCHECK_CMD
+        run_cppcheck
+        --check-level=exhaustive
+        --inline-suppr
+        --platform=unix64
+        --project=compile_commands.json
+        --std=c++17
+        --template=gcc
+    )
+endif()
+
+# }}}
+
 # Detect if libc provides iconv support.
 check_symbol_exists(iconv iconv.h HAS_ICONV)
 if(HAS_ICONV)

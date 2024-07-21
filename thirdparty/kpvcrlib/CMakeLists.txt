@@ -71,6 +71,8 @@ target_compile_options(crengine PRIVATE -ftabstop=4 -Wall)
 set_target_properties(crengine PROPERTIES CXX_VISIBILITY_PRESET hidden)
 # Enable `-fvisibility-inlines-hidden`.
 set_target_properties(crengine PROPERTIES VISIBILITY_INLINES_HIDDEN TRUE)
+# Export compile commands (for use by cppcheck / clang-tidy).
+set_target_properties(crengine PROPERTIES EXPORT_COMPILE_COMMANDS TRUE)
 target_include_directories(crengine PUBLIC ${CRE_DIR}/include)
 target_include_directories(crengine PRIVATE
     ${CRE_3RDPARTY_DIR}/antiword

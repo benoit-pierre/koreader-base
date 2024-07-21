@@ -1,14 +1,26 @@
 include(koreader_targets)
 
+list(APPEND CPPCHECK_CMD --include=${OUTPUT_DIR}/thirdparty/crengine/build/crsetup.h)
+
 list(APPEND CMAKE_ARGS -DCMAKE_KOVARS=${CMAKE_KOVARS} -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
 
 list(APPEND BUILD_CMD COMMAND ninja)
 
 external_project(
     BUILD_ALWAYS
+    CLANG_TIDY CPPCHECK
     CMAKE_ARGS ${CMAKE_ARGS}
     BUILD_COMMAND ${BUILD_CMD}
 )
+
+# We must ensure `lfs.c` & `lfs.h` are created
+# before trying to run cppcheck or clang-tidy.
+if(HAS_CLANG_TIDY)
+    add_dependencies(koreader-clang-tidy koreader-lfs)
+endif()
+if(HAS_CPPCHECK)
+    add_dependencies(koreader-cppcheck koreader-lfs)
+endif()
 
 function(add_target_build_step NAME)
     cmake_parse_arguments("" "EXCLUDE_FROM_ALL" "" "DEPENDS" ${ARGN})

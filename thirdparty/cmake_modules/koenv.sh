@@ -231,6 +231,18 @@ checkout_git_repo() { (
     git -C "${tree}" -c advice.detachedHead=false checkout --force --recurse-submodules "${revision}" --
 ); }
 
+run_clang_tidy() { (
+    set +u
+    # shellcheck disable=2086
+    run run-clang-tidy ${CLICOLOR_FORCE:+-use-color} ${PARALLEL_JOBS:+-j}${PARALLEL_JOBS} "$@"
+); }
+
+run_cppcheck() { (
+    set +u
+    # shellcheck disable=2086
+    run cppcheck ${PARALLEL_JOBS:+-j} ${PARALLEL_JOBS} ${PARALLEL_LOAD:+-l}${PARALLEL_LOAD} "$@"
+); }
+
 make() { (
     set +u
     unset MAKEOVERRIDES

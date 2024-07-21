@@ -44,6 +44,10 @@ function(setup_target NAME)
         target_compile_definitions(${NAME} PRIVATE DEBUG)
     endif()
     set_target_properties(${NAME} PROPERTIES EXCLUDE_FROM_ALL ${${NAME}_EXCLUDE_FROM_ALL})
+    if(NOT ${NAME}_EXCLUDE_FROM_ALL)
+        # Export compile commands (for use by cppcheck / clang-tidy).
+        set_target_properties(${NAME} PROPERTIES EXPORT_COMPILE_COMMANDS TRUE)
+    endif()
     target_sources(${NAME} PRIVATE ${${NAME}_SOURCES})
     # Post-build install command.
     set(INSTALL_CMD)

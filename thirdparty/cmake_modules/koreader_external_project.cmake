@@ -121,7 +121,7 @@ function(external_project)
         # Prefix.
         ""
         # Options.
-        "BUILD_ALWAYS;PROTECTED"
+        "BUILD_ALWAYS;CLANG_TIDY;CPPCHECK;PROTECTED"
         # One value keywords.
         "PATCH_OVERLAY;SOURCE_SUBDIR"
         # Multi-value keywords.
@@ -318,5 +318,39 @@ function(external_project)
         COMMENT "Cleaning '${PROJECT_NAME}'"
         COMMAND rm -rf ${CMAKE_CURRENT_BINARY_DIR}
     )
+
+    # Optional clang-tidy target.
+    if(HAS_CLANG_TIDY AND _CLANG_TIDY)
+        set(COMMENT "Running clang-tidy on '${PROJECT_NAME}'")
+        add_custom_target(
+            ${PROJECT_NAME}-clang-tidy
+            COMMENT ${COMMENT}
+            COMMAND set -- ${PROJECT_NAME} ${COMMENT} 0
+            COMMAND . ${KOENV}
+            COMMAND ${CLANGTIDY_CMD} -p .
+            DEPENDS ${PROJECT_NAME}-configure
+            WORKING_DIRECTORY ${BINARY_DIR}
+            USES_TERMINAL
+            VERBATIM
+        )
+        add_dependencies(clang-tidy ${PROJECT_NAME}-clang-tidy)
+    endif()
+
+    # Optional cppcheck target.
+    if(HAS_CPPCHECK AND _CPPCHECK)
+        set(COMMENT "Running cppcheck on '${PROJECT_NAME}'")
+        add_custom_target(
+            ${PROJECT_NAME}-cppcheck
+            COMMENT ${COMMENT}
+            COMMAND set -- ${PROJECT_NAME} ${COMMENT} 0
+            COMMAND . ${KOENV}
+            COMMAND ${CPPCHECK_CMD}
+            DEPENDS ${PROJECT_NAME}-configure
+            WORKING_DIRECTORY ${BINARY_DIR}
+            USES_TERMINAL
+            VERBATIM
+        )
+        add_dependencies(cppcheck crengine-cppcheck)
+    endif()
 
 endfunction()
