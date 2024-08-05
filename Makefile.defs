@@ -48,6 +48,18 @@ else
   CCACHE := $(or $(CCACHE),$(shell command -v ccache))
 endif
 
+ifneq (,$(findstring darwin,$(MAKE_HOST)))
+  DARWINHOST=1
+  ifneq (,$(findstring aarch64,$(MAKE_HOST)))
+    DARWIN_AARCH64_HOST=1
+  endif
+  ifdef EMULATE_READER
+    DARWIN=1
+    ifdef DARWIN_AARCH64_HOST
+      DARWIN_AARCH64=1
+    endif
+  endif
+endif
 
 TOOLCHAIN_DIR = $(abspath $(KOR_BASE)/toolchain)
 ANDROID_ARCH ?= arm
@@ -55,7 +67,7 @@ export ANDROID_HOME := $(or $(ANDROID_HOME),$(ANDROID_SDK_ROOT),$(TOOLCHAIN_DIR)
 export ANDROID_SDK_ROOT := $(ANDROID_HOME)
 export ANDROID_NDK_HOME := $(or $(ANDROID_NDK_HOME),$(ANDROID_NDK_ROOT),$(TOOLCHAIN_DIR)/android-ndk-r23c)
 export ANDROID_NDK_ROOT := $(ANDROID_NDK_HOME)
-ANDROID_TOOLCHAIN = $(ANDROID_NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64
+ANDROID_TOOLCHAIN = $(ANDROID_NDK_HOME)/toolchains/llvm/prebuilt/$(if $(DARWINHOST),darwin-x86_64,linux-x86_64)
 ifeq ($(ANDROID_ARCH), arm64)
 	# 64bit arches require at least ABI 21.
 	export NDKABI?=21
