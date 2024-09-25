@@ -124,6 +124,9 @@ jobs:
       ccache_maxsize:
         type: string
         default: "128M"
+      save_tests:
+        type: boolean
+        default: false
     executor: << parameters.executor >>
     resource_class: medium
     environment:
@@ -197,6 +200,15 @@ jobs:
       - run:
           name: Test
           command: source .ci/test_script.sh
+      - when:
+          condition: << parameters.save_tests >>
+          steps:
+              - store_test_results:
+                  name: Store tests results
+                  path: test-results.xml
+              - store_artifacts:
+                  name: Upload tests results to artifacts
+                  path: test-results.xml
       # }}}
 
   # }}}
@@ -225,6 +237,7 @@ workflows:
               only: master
           requires:
             - lint
+          save_tests: true
 
       - build_and_test:
           name: emu_gcc_ninja_debug
@@ -232,12 +245,14 @@ workflows:
           requires:
             - lint
           ccache_maxsize: "512M"
+          save_tests: true
 
       - build_and_test:
           name: emu_clang_ninja
           executor: emu_clang_ninja
           requires:
             - lint
+          save_tests: true
 
       # }}}
 
