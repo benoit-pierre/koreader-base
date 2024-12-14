@@ -135,10 +135,11 @@ jobs:
 
   platform:
     name: Platform
-    needs: [prepare, emulator]
+    needs: [prepare, lint, emulator]
     if: |
       !cancelled() &&
       needs.prepare.outputs.platform &&
+      contains('skipped success', needs.lint.result) &&
       contains('skipped success', needs.emulator.result)
     uses: ./.github/workflows/build_matrix.yml
     with:

@@ -4,7 +4,7 @@ lint:
 
 emulator:
 
-  - id: emu_clang
+  - id: emu-clang
     job: Clang
     image: koreader/kobase-clang:0.3.4-20.04
     target: ""
@@ -12,21 +12,22 @@ emulator:
     test: true
 
   - &EMU_GCC
-    id: emu_gcc
+    id: emu-gcc
     job: GCC
     image: koreader/kobase:0.3.4-20.04
     target: ""
     test: true
 
   - <<: *EMU_GCC
-    id: emu_gcc_debug
+    id: emu-gcc-debug
     job: GCC Debug
     cache_size: 256M
     makeflags: KODEBUG=1
 
 macos:
 
-  - id: macos_x86-64
+  - &MACOS
+    id: macos-x86_64
     job: "13 x86-64 🔨15.2 🎯10.15"
     cache: macos.13_x86_64_xcode.15.2_10.15
     runs-on: macos-13
@@ -35,45 +36,43 @@ macos:
     target: ""
     test: true
 
-  - id: macos_arm64
+  - <<: *MACOS
+    id: macos-arm64-14
     job: "14 ARM64 🔨15.4 🎯11.0"
     cache: macos.14_ARM64_xcode.15.4_11.0
     runs-on: macos-14
     xcode_version: "15.4"
     macosx_deployment_target: "11.0"
-    target: ""
-    test: true
 
-  - id: macos_arm64_latest
+  - <<: *MACOS
+    id: macos-arm64-15
     job: "15 ARM64 🔨16.0 🎯14.6.1"
     cache: macos.15_ARM64_xcode.16.0_14.6.1
     runs-on: macos-15
     xcode_version: "16.0"
-    macosx_deployment_target: 14.6.1
-    target: ""
-    test: true
+    macosx_deployment_target: "14.6.1"
 
 platform:
 
   - &ANDROID
-    id: android_arm
+    id: android-arm
     job: Android ARM
     image: koreader/koandroid:0.8.3-20.04
     target: android
     makeflags: ANDROID_ARCH=arm
 
   - <<: *ANDROID
-    id: android_arm64
+    id: android-arm64
     job: Android ARM64
     makeflags: ANDROID_ARCH=arm64
 
   - <<: *ANDROID
-    id: android_x86
+    id: android-x86
     job: Android x86
     makeflags: ANDROID_ARCH=x86
 
   - <<: *ANDROID
-    id: android_x86_64
+    id: android-x86_64
     job: Android x86_64
     makeflags: ANDROID_ARCH=x86_64
 
