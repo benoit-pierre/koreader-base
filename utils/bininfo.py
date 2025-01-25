@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import dataclasses
+import hashlib
 import itertools
 import functools
 import os
@@ -40,6 +41,7 @@ class LibraryInfo:
     unresolved: list = dataclasses.field(default_factory=set)
     upneeded  : list = dataclasses.field(default_factory=list)
     reexport  : list = dataclasses.field(default_factory=list)
+    sha1      : str  = None
 
 
 def elfinfo(library, readelf=None):
@@ -235,6 +237,7 @@ def dumpinfo(info):
         print('  UPNEEDED  :', export)
     for export in info.reexport:
         print('  REEXPORT  :', export)
+    print('  SHA1      :', info.sha1)
 
 
 def main(args, darwin=None):
@@ -243,7 +246,10 @@ def main(args, darwin=None):
     bininfo = machoinfo if darwin else elfinfo
     for binary in sorted(binfind(args, darwin=darwin)):
         print(''.join((ANSI_STATUS, binary, ANSI_RESET, ':')))
-        dumpinfo(bininfo(binary))
+        info = bininfo(binary)
+        with open(binary, 'rb') as fp:
+            info.sha1 = hashlib.sha1(fp.read()).hexdigest()
+        dumpinfo(info)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
