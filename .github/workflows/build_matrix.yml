@@ -219,6 +219,12 @@ jobs:
 
       # }}}
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: koreader-${{ matrix.cache }}
+          path: build
+
       - name: Test
         if: matrix.test
         run: ./utils/fake_tty.py make --assume-old=all test
