@@ -239,4 +239,4 @@ jobs:
         if: matrix.test
         run: ./utils/fake_tty.py make --assume-old=all test
 
-# vim: foldmethod=marker foldlevel=0
+# vim: foldmethod=marker foldlevel=0 ft=yaml
