@@ -9,6 +9,7 @@ emulator:
     image: koreader/kobase-clang:0.3.6-20.04
     target: ""
     makeflags: USE_CLANG=1
+    cache_size: 150M
     test: true
 
   - &EMU_GCC
@@ -16,6 +17,7 @@ emulator:
     job: GCC
     image: koreader/kobase:0.3.5-20.04
     target: ""
+    cache_size: 280M
     test: true
     check_ffi_cdecls: true
 
@@ -34,6 +36,7 @@ macos:
     xcode_version: "15.2"
     macosx_deployment_target: "10.15"
     target: ""
+    cache_size: 200MB
     test: true
 
   - <<: *MACOS
@@ -60,6 +63,7 @@ platform:
     image: koreader/koandroid:0.8.4-20.04
     target: android
     makeflags: ANDROID_ARCH=arm
+    cache_size: 160M
 
   - <<: *ANDROID
     id: android-arm64
@@ -79,6 +83,7 @@ platform:
   - id: appimage
     job: AppImage x86_64
     image: koreader/koappimage:0.4.6-20.04
+    cache_size: 300M
     test: true
 
   - id: cervantes
@@ -103,6 +108,7 @@ platform:
   - <<: *KINDLE
     id: kindle-legacy
     job: Kindle Legacy
+    check_ffi_cdecls: false
 
   - id: kobo
     job: Kobo
@@ -117,5 +123,6 @@ platform:
   - id: sony-prstux
     job: Sony PRSTUX
     image: koreader/kodeb:0.1.2-20.04
+    cache_size: 280M
 
 # vim: ft=yaml
