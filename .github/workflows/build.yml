@@ -117,7 +117,7 @@ jobs:
       !cancelled() &&
       needs.prepare.outputs.emulator &&
       contains('skipped success', needs.lint.result)
-    uses: ./.github/workflows/build.matrix
+    uses: ./.github/workflows/build.matrix.yml
     with:
       jobs: ${{ needs.prepare.outputs.emulator }}
 
@@ -129,7 +129,7 @@ jobs:
       needs.prepare.outputs.macos &&
       contains('skipped success', needs.lint.result) &&
       contains('skipped success', needs.emulator.result)
-    uses: ./.github/workflows/build.matrix
+    uses: ./.github/workflows/build.matrix.yml
     with:
       fail-fast: false
       jobs: ${{ needs.prepare.outputs.macos }}
@@ -142,7 +142,7 @@ jobs:
       needs.prepare.outputs.platform &&
       contains('skipped success', needs.lint.result) &&
       contains('skipped success', needs.emulator.result)
-    uses: ./.github/workflows/build.matrix
+    uses: ./.github/workflows/build.matrix.yml
     with:
       fail-fast: false
       jobs: ${{ needs.prepare.outputs.platform }}
