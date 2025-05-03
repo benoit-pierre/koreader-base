@@ -14,10 +14,10 @@ list(APPEND INSTALL_CMD COMMAND make DESTDIR=${STAGING_DIR} install)
 list(APPEND INSTALL_CMD COMMAND rm -f ${STAGING_DIR}/lib/libiconv.la ${STAGING_DIR}/lib/libcharset.la)
 
 external_project(
-    DOWNLOAD URL ace8b5f2db42f7b3b3057585e80d9808
-    http://ftpmirror.gnu.org/libiconv/libiconv-1.15.tar.gz
-    https://ftp.wayne.edu/gnu/libiconv/libiconv-1.15.tar.gz
-    http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz
+    DOWNLOAD URL 1af69958b42981d3c3029ffb4c7ebaed
+    http://ftpmirror.gnu.org/libiconv/libiconv-1.18.tar.gz
+    https://ftp.wayne.edu/gnu/libiconv/libiconv-1.18.tar.gz
+    http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.18.tar.gz
     CONFIGURE_COMMAND ${CFG_CMD}
     BUILD_COMMAND ${BUILD_CMD}
     INSTALL_COMMAND ${INSTALL_CMD}
