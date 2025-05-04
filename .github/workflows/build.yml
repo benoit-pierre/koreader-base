@@ -30,7 +30,7 @@ jobs:
           #   platform: 'ARM64'
           #   xcode_version: '16.0'
           #   deployment_target: '14.6.1'
-          - image: '15-large'
+          - image: '15'
             platform: 'x86-64'
             xcode_version: '15.4'
             deployment_target: '15.0'
