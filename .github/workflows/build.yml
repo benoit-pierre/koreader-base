@@ -97,6 +97,7 @@ jobs:
           brew uninstall gradle maven
           brew install --formula --overwrite --quiet "${packages[@]}"
           brew list --versions
+          cmake --version
 
       - name: Update PATH
         run: >
