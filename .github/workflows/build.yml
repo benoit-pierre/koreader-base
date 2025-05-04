@@ -18,18 +18,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: '13'
-            platform: 'x86-64'
-            xcode_version: '15.2'
-            deployment_target: '10.15'
-          - image: '14'
-            platform: 'ARM64'
-            xcode_version: '15.4'
-            deployment_target: '11.0'
+          # - image: '13'
+          #   platform: 'x86-64'
+          #   xcode_version: '15.2'
+          #   deployment_target: '10.15'
+          # - image: '14'
+          #   platform: 'ARM64'
+          #   xcode_version: '15.4'
+          #   deployment_target: '11.0'
+          # - image: '15'
+          #   platform: 'ARM64'
+          #   xcode_version: '16.0'
+          #   deployment_target: '14.6.1'
           - image: '15'
-            platform: 'ARM64'
-            xcode_version: '16.0'
-            deployment_target: '14.6.1'
+            platform: 'x86-64'
+            xcode_version: '13.3'
+            deployment_target: '15.0'
 
     name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🔨${{ matrix.xcode_version }} 🎯${{ matrix.deployment_target }}"
 
@@ -91,9 +95,7 @@ jobs:
           # from attempting (and failing) to upgrade them.
           brew uninstall gradle maven
           brew install --formula --overwrite --quiet "${packages[@]}"
-
-      - name: List installed brew packages
-        run: brew list -l
+          brew list --versions
 
       - name: Update PATH
         run: >
