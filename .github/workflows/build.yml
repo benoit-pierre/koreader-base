@@ -75,6 +75,7 @@ jobs:
             automake
             bash
             binutils
+            cmake
             coreutils
             findutils
             gettext
