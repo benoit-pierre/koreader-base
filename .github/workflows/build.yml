@@ -32,7 +32,7 @@ jobs:
           #   deployment_target: '14.6.1'
           - image: '15'
             platform: 'x86-64'
-            xcode_version: '13.3'
+            xcode_version: '16.3'
             deployment_target: '15.0'
 
     name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🔨${{ matrix.xcode_version }} 🎯${{ matrix.deployment_target }}"
