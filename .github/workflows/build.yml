@@ -91,7 +91,9 @@ jobs:
           # from attempting (and failing) to upgrade them.
           brew uninstall gradle maven
           brew install --formula --overwrite --quiet "${packages[@]}"
-          brew list --versions
+
+      - name: List installed brew packages
+        run: brew list -l
 
       - name: Update PATH
         run: >
