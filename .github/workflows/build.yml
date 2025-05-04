@@ -177,6 +177,12 @@ jobs:
 
       # }}}
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: koreader-macos-${{ matrix.platform }}-glib-meson-log
+          path: 'build/thirdparty/glib/build/meson-logs/meson-log.txt'
+
       # Clean / save caches. {{{
 
       - name: Clean caches
