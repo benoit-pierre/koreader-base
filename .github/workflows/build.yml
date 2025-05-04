@@ -169,7 +169,7 @@ jobs:
       - name: Build
         id: build
         if: steps.build-restore.outputs.cache-hit != 'true'
-        run: make sdcv
+        run: make clean sdcv -j1 V=1 2>&1 | tee sdcv.log
 
       - name: Dump build timings
         if: contains('failure success', steps.build.conclusion) && !cancelled()
