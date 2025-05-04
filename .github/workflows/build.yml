@@ -140,8 +140,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /Users/runner/Library/Caches/ccache
-          key: ${{ env.CACHE_KEY }}-ccache-${{ hashFiles('cache-key') }}
-          restore-keys: ${{ env.CACHE_KEY }}-ccache-
+          key: pouet-${{ env.CACHE_KEY }}-ccache-${{ hashFiles('cache-key') }}
+          restore-keys: pouet-${{ env.CACHE_KEY }}-ccache-
 
       - name: Install ccache
         if: steps.build-restore.outputs.cache-hit != 'true'
