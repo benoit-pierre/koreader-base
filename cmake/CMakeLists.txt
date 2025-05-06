@@ -371,6 +371,14 @@ declare_project(thirdparty/popen-noshell EXCLUDE_FROM_ALL)
 # proxy-libintl
 declare_project(thirdparty/proxy-libintl EXCLUDE_FROM_ALL)
 
+# pv
+if(NOT (ANDROID OR APPLE OR EMULATE_READER))
+    set(EXCLUDE_FROM_ALL)
+else()
+    set(EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
+endif()
+declare_project(thirdparty/pv ${EXCLUDE_FROM_ALL})
+
 # sdcv
 declare_project(thirdparty/sdcv DEPENDS glib zlib)
 
