@@ -41,7 +41,7 @@ jobs:
       CLICOLOR_FORCE: '1'
       KODEBUG: ""
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
-      MAKEFLAGS: 'OUTPUT_DIR=build V=1'
+      MAKEFLAGS: 'OUTPUT_DIR=build V=1 USE_NO_CCACHE=1'
 
     steps:
 
@@ -160,7 +160,7 @@ jobs:
       - name: Build
         id: build
         if: steps.build-restore.outputs.cache-hit != 'true'
-        run: make luasec turbo
+        run: make luasec
 
       - name: Dump build timings
         if: contains('failure success', steps.build.conclusion) && !cancelled()
