@@ -41,7 +41,7 @@ jobs:
       CLICOLOR_FORCE: '1'
       KODEBUG: ""
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
-      MAKEFLAGS: 'OUTPUT_DIR=build V=1 USE_NO_CCACHE=1'
+      MAKEFLAGS: 'OUTPUT_DIR=build V=1'
 
     steps:
 
@@ -89,6 +89,9 @@ jobs:
           # from attempting (and failing) to upgrade them.
           brew uninstall gradle maven
           brew install --formula --overwrite --quiet "${packages[@]}"
+          # Prevent homebrew crap from messing with some of our
+          # thirdparty project builds (e.g. luasec and turbo).
+          brew unlink openssl@3
 
       - name: Update PATH
         run: >
