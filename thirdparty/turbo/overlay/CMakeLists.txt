@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17.5)
 project(turbo LANGUAGES C)
 
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL REQUIRED Crypto SSL)
 
 add_library(tffi_wrap)
 target_include_directories(tffi_wrap PRIVATE deps/http-parser)

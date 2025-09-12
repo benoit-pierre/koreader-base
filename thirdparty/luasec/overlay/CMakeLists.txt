@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17.5)
 project(luasec LANGUAGES C)
 
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL REQUIRED Crypto SSL)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LuaJIT luajit REQUIRED IMPORTED_TARGET)
 
