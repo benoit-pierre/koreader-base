@@ -80,6 +80,8 @@ jobs:
             ninja
             pkg-config
             util-linux
+            tesseract
+            openssl
           )
           # Don't auto-update.
           export HOMEBREW_NO_AUTO_UPDATE=1
@@ -89,6 +91,15 @@ jobs:
           # from attempting (and failing) to upgrade them.
           brew uninstall gradle maven
           brew install --formula --overwrite --quiet "${packages[@]}"
+
+      - run: sudo mkdir -p /usr/local/include
+      - run: mkdir standard_incdir system_incdir 
+      - run: clang -v -isystem $PWD/system_incdir -I $PWD/standard_incdir -x c -c -o /dev/null /dev/null
+      - run: clang++ -v -isystem $PWD/system_incdir -I $PWD/standard_incdir -x c++ -c -o /dev/null /dev/null
+      - run: clang -v -idirafter /usr/local/include -isystem $PWD/system_incdir -I $PWD/standard_incdir -x c -c -o /dev/null /dev/null
+      - run: clang++ -v -idirafter /usr/local/include -isystem $PWD/system_incdir -I $PWD/standard_incdir -x c++ -c -o /dev/null /dev/null
+      - run: clang -v -isystem /usr/local/include -isystem $PWD/system_incdir -I $PWD/standard_incdir -x c -c -o /dev/null /dev/null
+      - run: clang++ -v -isystem /usr/local/include -isystem $PWD/system_incdir -I $PWD/standard_incdir -x c++ -c -o /dev/null /dev/null
 
       - name: Update PATH
         run: >
@@ -120,12 +131,12 @@ jobs:
       - name: Generate cache key
         run: make TARGET= cache-key
 
-      - name: Restore build directory
-        id: build-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: build
-          key: ${{ env.CACHE_KEY }}-build-${{ hashFiles('cache-key') }}
+      # - name: Restore build directory
+      #   id: build-restore
+      #   uses: actions/cache/restore@v4
+      #   with:
+      #     path: build
+      #     key: ${{ env.CACHE_KEY }}-build-${{ hashFiles('cache-key') }}
 
       - name: Restore build cache
         id: ccache-restore
@@ -160,7 +171,7 @@ jobs:
       - name: Build
         id: build
         if: steps.build-restore.outputs.cache-hit != 'true'
-        run: make
+        run: make libk2pdfopt luasec
 
       - name: Dump build timings
         if: contains('failure success', steps.build.conclusion) && !cancelled()
@@ -168,7 +179,7 @@ jobs:
 
       # }}}
 
-      # Clean / save caches. {{{
+      # Clean / save build cache. {{{
 
       - name: Clean caches
         if: contains('failure success', steps.build.conclusion) && !cancelled()
@@ -186,13 +197,6 @@ jobs:
           path: /Users/runner/Library/Caches/ccache
           key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
 
-      - name: Save build directory
-        uses: actions/cache/save@v4
-        if: steps.build-restore.outputs.cache-hit != 'true'
-        with:
-          path: build
-          key: ${{ steps.build-restore.outputs.cache-primary-key }}
-
       # }}}
 
       # Dump & check binaries. {{{
@@ -204,6 +208,13 @@ jobs:
         run: make bincheck
 
       # }}}
+
+      - name: Save build directory
+        uses: actions/cache/save@v4
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        with:
+          path: build
+          key: ${{ steps.build-restore.outputs.cache-primary-key }}
 
       - name: Test
         run: ./utils/fake_tty.py make --assume-old=all test
