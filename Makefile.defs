@@ -196,7 +196,6 @@ else ifeq ($(TARGET), macos)
   SDL = builtin
   EMULATE_READER = 1
   DARWIN = 1
-  USE_CLANG = 1
 else ifeq ($(TARGET), android)
 	ANDROID=1
 	MONOLIBTIC?=1
@@ -253,13 +252,13 @@ else ifndef TARGET
   SDL = yes
   ifeq ($(CURRENT_OS), darwin)
     DARWIN = 1
-    USE_CLANG = 1
   endif
 else
   $(error Invalid TARGET: "$(TARGET)")
 endif
 
-ifeq ($(CURRENT_OS), darwin)
+ifdef DARWIN
+  USE_CLANG = 1
   export MACOSX_DEPLOYMENT_TARGET := $(or $(MACOSX_DEPLOYMENT_TARGET),$(shell sw_vers -productVersion))
 endif
 
