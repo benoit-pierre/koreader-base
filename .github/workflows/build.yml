@@ -19,27 +19,20 @@ jobs:
       matrix:
         include:
           - image: '15'
-            platform: 'x86-64'
-            xcode_version: '16.4'
-            deployment_target: '10.15'
-            jobs: 5
-          - image: '15'
             platform: 'ARM64'
-            xcode_version: '16.4'
             deployment_target: '11.0'
             jobs: 4
 
-    name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🔨${{ matrix.xcode_version }} 🎯${{ matrix.deployment_target }}"
+    name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🎯${{ matrix.deployment_target }}"
 
     runs-on: "macos-${{ matrix.image }}${{ matrix.platform == 'x86-64' && '-intel' || '' }}"
 
     env:
       # Bump first number to reset all caches.
-      CACHE_KEY: "1-macOS-${{ matrix.image }}-${{ matrix.platform }}-XC${{ matrix.xcode_version }}-DT${{ matrix.deployment_target }}"
+      CACHE_KEY: "2-macOS-${{ matrix.image }}-Android-ARM64"
       CLICOLOR_FORCE: '1'
       KODEBUG: ""
-      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
-      MAKEFLAGS: OUTPUT_DIR=build PARALLEL_JOBS=${{ matrix.jobs }}
+      MAKEFLAGS: OUTPUT_DIR=build PARALLEL_JOBS=${{ matrix.jobs }} TARGET=android ANDROID_ARCH=arm64
 
     steps:
 
@@ -47,7 +40,7 @@ jobs:
 
       - name: XCode version
         run: |
-          sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode_version }}.app
+          # sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode_version }}.app
           xcodebuild -version
           xcode-select -p
 
