@@ -603,8 +603,8 @@ else ifeq ($(TARGET), macos)
   else
     TARGET_CFLAGS = -mtune=generic
   endif
-# else ifdef EMULATE_READER
-#   TARGET_CFLAGS = -march=native
+else ifdef EMULATE_READER
+  TARGET_CFLAGS = -march=native
 endif
 
 # Some of our deps require C11 & C++17 (`if constexpr (…)`) support.
@@ -676,7 +676,7 @@ ifdef EMULATE_READER
 	REALCXX:=$(HOSTCXX)
 	HOSTCC:=$(strip $(CCACHE) $(HOSTCC))
 	HOSTCXX:=$(strip $(CCACHE) $(HOSTCXX))
-	HOSTCFLAGS:=$(TARGET_CFLAGS) $(BASE_CFLAGS) $(QFLAGS)
+	HOSTCFLAGS:=$(BASE_CFLAGS) $(QFLAGS) $(TARGET_CFLAGS)
 	CC:=$(HOSTCC)
 	CXX:=$(HOSTCXX)
 	STRIP:=$(HOSTSTRIP)
