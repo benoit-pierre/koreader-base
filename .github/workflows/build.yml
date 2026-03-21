@@ -28,24 +28,33 @@ jobs:
             xcode_version: '16.4'
             deployment_target: '11.0'
             jobs: 4
+          - image: '26'
+            platform: 'x86-64'
+            jobs: 5
+            gcc_ffi: true
+          - image: '26'
+            platform: 'ARM64'
+            jobs: 4
+            gcc_ffi: true
 
-    name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🔨${{ matrix.xcode_version }} 🎯${{ matrix.deployment_target }}"
+    name: "macOS ${{ matrix.image }} ${{ matrix.platform }}${{ matrix.xcode_version && format(' 🔨{0}', matrix.xcode_version) || '' }}${{ matrix.deployment_target && format(' 🎯{0}', matrix.deployment_target) || '' }}${{ matrix.gcc_ffi && ' GCC FFI' }}"
 
     runs-on: "macos-${{ matrix.image }}${{ matrix.platform == 'x86-64' && '-intel' || '' }}"
 
     env:
       # Bump first number to reset all caches.
-      CACHE_KEY: "1-macOS-${{ matrix.image }}-${{ matrix.platform }}-XC${{ matrix.xcode_version }}-DT${{ matrix.deployment_target }}"
+      CACHE_KEY: "1-macOS-${{ matrix.image }}-${{ matrix.platform }}${{ matrix.xcode_version && format('-XC{0}', matrix.xcode_version) || '' }}${{ matrix.deployment_target && format('-DT{0}', matrix.deployment_target) || '' }}${{ matrix.gcc_ffi && '-GCC-FFI' || '' }}"
       CLICOLOR_FORCE: '1'
       KODEBUG: ""
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
-      MAKEFLAGS: OUTPUT_DIR=build PARALLEL_JOBS=${{ matrix.jobs }}
+      MAKEFLAGS: OUTPUT_DIR=build PARALLEL_JOBS=${{ matrix.jobs }} ${{ matrix.gcc_ffi && 'USE_CLANG=' || '' }}
 
     steps:
 
       # Install dependencies. {{{
 
       - name: XCode version
+        if: matrix.xcode_version
         run: |
           sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode_version }}.app
           xcodebuild -version
@@ -72,6 +81,8 @@ jobs:
             binutils
             coreutils
             findutils
+            gcc
+            gmp
             libtool
             make
             nasm
@@ -88,6 +99,14 @@ jobs:
           # from attempting (and failing) to upgrade them.
           brew uninstall gradle maven
           brew install --formula --overwrite --quiet "${packages[@]}"
+
+      - name: Setup GCC
+        if: matrix.gcc_ffi != ''
+        run: |
+          ln -vsf "$(brew --prefix)"/bin/gcc{-15,}
+          ln -vsf "$(brew --prefix)"/bin/g++{-15,}
+          "$(brew --prefix)"/bin/gcc --version
+          "$(brew --prefix)"/bin/g++ --version
 
       - name: Update PATH
         run: >
@@ -161,7 +180,7 @@ jobs:
       - name: Build
         id: build
         if: steps.build-restore.outputs.cache-hit != 'true'
-        run: make
+        run: make ${{ matrix.gcc_ffi && 'ffi-deps' || '' }}
 
       - name: Dump build timings
         if: contains('failure success', steps.build.conclusion) && !cancelled()
@@ -175,8 +194,6 @@ jobs:
         if: contains('failure success', steps.build.conclusion) && !cancelled()
         run: |
           set -x
-          # Trim the build directory.
-          rm -rf build/{cmake,staging,thirdparty}
           ccache --cleanup >/dev/null
           ccache --show-stats --verbose
 
@@ -189,15 +206,34 @@ jobs:
 
       # }}}
 
+      # Check FFI cdecls are up-to-date. {{{
+
+      - name: Check FFI cdecls are up-to-date
+        if: steps.build-restore.outputs.cache-hit != 'true' && matrix.gcc_ffi
+        run: |
+          set -x
+          make ffi
+          git --no-pager diff --color=always --exit-code ffi
+
+      # }}}
+
       # Dump & check binaries. {{{
 
       - name: Dump binaries runtime path & dependencies
+        if: matrix.gcc_ffi == ''
         run: make bininfo
 
       - name: Checking binaries for missing dependencies
+        if: matrix.gcc_ffi == ''
         run: make bincheck
 
       # }}}
+
+      # Trim & save build directory. {{{
+
+      - name: Trim build directory
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: rm -rf build/{cmake,staging,thirdparty}
 
       - name: Save build directory
         uses: actions/cache/save@v5
@@ -206,7 +242,10 @@ jobs:
           path: build
           key: ${{ steps.build-restore.outputs.cache-primary-key }}
 
+      # }}}
+
       - name: Test
+        if: matrix.gcc_ffi == ''
         run: ./utils/fake_tty.py make --assume-old=all test
 
 # vim: foldmethod=marker foldlevel=0
