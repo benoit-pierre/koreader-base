@@ -64,6 +64,8 @@ jobs:
           unzip -j ninjatracing.zip '*/ninjatracing'
           install -m755 ninjatracing /usr/local/bin/
           rm ninjatracing*
+          # Install zerobrew.
+          curl -fsSL https://zerobrew.rs/install | bash
           # Install brew packages.
           packages=(
             autoconf
@@ -80,14 +82,7 @@ jobs:
             sdl3
             util-linux
           )
-          # Don't auto-update.
-          export HOMEBREW_NO_AUTO_UPDATE=1
-          # Don't upgrade already installed formulas.
-          export HOMEBREW_NO_INSTALL_UPGRADE=1
-          # Remove some installed packages to prevent brew
-          # from attempting (and failing) to upgrade them.
-          brew uninstall gradle maven
-          brew install --formula --overwrite --quiet "${packages[@]}"
+          zb install "${packages[@]}"
 
       - name: Update PATH
         run: >
