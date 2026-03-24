@@ -39,7 +39,7 @@ jobs:
       CLICOLOR_FORCE: '1'
       KODEBUG: ""
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
-      MAKEFLAGS: OUTPUT_DIR=build PARALLEL_JOBS=${{ matrix.jobs }}
+      MAKEFLAGS: OUTPUT_DIR=build PARALLEL_JOBS=${{ matrix.jobs }} BREW_PREFIX=/opt/zbrew
 
     steps:
 
@@ -91,8 +91,6 @@ jobs:
           unzip -j ninjatracing.zip '*/ninjatracing'
           install -m755 ninjatracing /usr/local/bin/
           rm ninjatracing*
-          # Ensure SDL3 library gets picked-up by our build system.
-          ln -s {/opt/zbrew,"$(brew --prefix)"}/lib/libSDL3.0.dylib
 
       - name: Update PATH
         run: >
