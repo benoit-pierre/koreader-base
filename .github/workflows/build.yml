@@ -82,7 +82,7 @@ jobs:
             sdl3
             util-linux
           )
-          zb install "${packages[@]}"
+          zb --prefix "$(brew --prefix)" install "${packages[@]}"
 
       - name: Update PATH
         run: >
