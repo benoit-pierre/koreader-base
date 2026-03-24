@@ -84,20 +84,23 @@ jobs:
             uv
           )
           export PATH="/Users/runner/.local/bin:$PATH"
-          zb --prefix "$(brew --prefix)" install "${packages[@]}"
+          zb --prefix /opt/zbrew install --auto-init "${packages[@]}"
           # Install ninjatracing.
           /opt/zbrew/bin/uv pip install --system ruamel.yaml
           wget -O ninjatracing.zip https://github.com/cradleapps/ninjatracing/archive/084212eaf68f25c70579958a2ed67fb4ec2a9ca4.zip
           unzip -j ninjatracing.zip '*/ninjatracing'
           install -m755 ninjatracing /usr/local/bin/
           rm ninjatracing*
+          # Ensure SDL3 library gets picked-up by our build system.
+          ln -s {/opt/zbrew,"$(brew --prefix)"}/lib/libSDL3.0.dylib
 
       - name: Update PATH
         run: >
           printf '%s\n'
-          "$(brew --prefix)/opt/findutils/libexec/gnubin"
-          "$(brew --prefix)/opt/make/libexec/gnubin"
-          "$(brew --prefix)/opt/util-linux/bin"
+          /opt/zbrew/bin
+          /opt/zbrew/opt/findutils/libexec/gnubin
+          /opt/zbrew/opt/make/libexec/gnubin
+          /opt/zbrew/opt/util-linux/bin
           | tee "${GITHUB_PATH}"
 
       # }}}
