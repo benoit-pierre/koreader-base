@@ -82,14 +82,14 @@ jobs:
             sdl3
             util-linux
           )
-          zb --prefix "$(brew --prefix)" install "${packages[@]}"
+          zb --prefix /opt/zbrew install "${packages[@]}"
 
       - name: Update PATH
         run: >
           printf '%s\n'
-          "$(brew --prefix)/opt/findutils/libexec/gnubin"
-          "$(brew --prefix)/opt/make/libexec/gnubin"
-          "$(brew --prefix)/opt/util-linux/bin"
+          "/opt/zbrew/opt/findutils/libexec/gnubin"
+          "/opt/zbrew/opt/make/libexec/gnubin"
+          "/opt/zbrew/opt/util-linux/bin"
           | tee "${GITHUB_PATH}"
 
       # }}}
