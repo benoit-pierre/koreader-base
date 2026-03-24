@@ -84,8 +84,7 @@ jobs:
             uv
           )
           export PATH="/Users/runner/.local/bin:$PATH"
-          zb --prefix /opt/zbrew init
-          zb --prefix /opt/zbrew install "${packages[@]}"
+          zb --prefix /opt/zbrew install --auto-init "${packages[@]}"
           # Install ninjatracing.
           /opt/zbrew/bin/uv pip install --system ruamel.yaml
           wget -O ninjatracing.zip https://github.com/cradleapps/ninjatracing/archive/084212eaf68f25c70579958a2ed67fb4ec2a9ca4.zip
