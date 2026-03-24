@@ -85,13 +85,15 @@ jobs:
           export PATH="/Users/runner/.local/bin:$PATH"
           zb --prefix /opt/zbrew init
           zb --prefix /opt/zbrew install "${packages[@]}"
+          ls /opt/zbrew/opt/findutils/libexec/gnubin /opt/zbrew/opt/make/libexec/gnubin /opt/zbrew/opt/util-linux/bin /opt/zbrew/bin
 
       - name: Update PATH
         run: >
           printf '%s\n'
-          "/opt/zbrew/opt/findutils/libexec/gnubin"
-          "/opt/zbrew/opt/make/libexec/gnubin"
-          "/opt/zbrew/opt/util-linux/bin"
+          /opt/zbrew/bin
+          /opt/zbrew/opt/findutils/libexec/gnubin
+          /opt/zbrew/opt/make/libexec/gnubin
+          /opt/zbrew/opt/util-linux/bin
           | tee "${GITHUB_PATH}"
 
       # }}}
