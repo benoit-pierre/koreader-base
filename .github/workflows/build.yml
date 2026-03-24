@@ -86,7 +86,7 @@ jobs:
           export PATH="/Users/runner/.local/bin:$PATH"
           zb --prefix /opt/zbrew install --auto-init "${packages[@]}"
           # Install ninjatracing (for buildstats) and ruamel.yaml (for bincheck).
-          /opt/zbrew/bin/uv pip install --system ruamel.yaml https://github.com/cradleapps/ninjatracing/archive/084212eaf68f25c70579958a2ed67fb4ec2a9ca4.zip
+          /opt/zbrew/bin/uv pip install --system ruamel.yaml https://github.com/nico/ninjatracing/archive/fc2924576c9338ff0721f539e6dfa2f3983ae2db.zip
 
       - name: Update PATH
         run: >
