@@ -78,7 +78,7 @@ jobs:
             make
             nasm
             ninja
-            pkg-config
+            pkgconf
             sdl3
             util-linux
           )
