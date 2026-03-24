@@ -82,6 +82,8 @@ jobs:
             sdl3
             util-linux
           )
+          export PATH="/Users/runner/.local/bin:$HOME"
+          zb --prefix /opt/zbrew init
           zb --prefix /opt/zbrew install "${packages[@]}"
 
       - name: Update PATH
