@@ -72,6 +72,8 @@ jobs:
             binutils
             coreutils
             findutils
+            gcc
+            gmp
             libtool
             make
             nasm
@@ -88,6 +90,11 @@ jobs:
           # from attempting (and failing) to upgrade them.
           brew uninstall gradle maven
           brew install --formula --overwrite --quiet "${packages[@]}"
+          # Setup GCC.
+          ln -vsf "$(brew --prefix)"/bin/gcc{-15,}
+          ln -vsf "$(brew --prefix)"/bin/g++{-15,}
+          "$(brew --prefix)"/bin/gcc --version
+          "$(brew --prefix)"/bin/g++ --version
 
       - name: Update PATH
         run: >
@@ -175,8 +182,6 @@ jobs:
         if: contains('failure success', steps.build.conclusion) && !cancelled()
         run: |
           set -x
-          # Trim the build directory.
-          rm -rf build/{cmake,staging,thirdparty}
           ccache --cleanup >/dev/null
           ccache --show-stats --verbose
 
@@ -186,6 +191,17 @@ jobs:
         with:
           path: /Users/runner/Library/Caches/ccache
           key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+
+      # }}}
+
+      # Check FFI cdecls are up-to-date. {{{
+
+      - name: Check FFI cdecls are up-to-date
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: |
+          set -x
+          make ffi
+          git --no-pager diff --color=always --exit-code ffi
 
       # }}}
 
@@ -199,12 +215,20 @@ jobs:
 
       # }}}
 
+      # Trim & save build directory. {{{
+
+      - name: Trim build directory
+        if: steps.build-restore.outputs.cache-hit != 'true'
+        run: rm -rf build/{cmake,staging,thirdparty}
+
       - name: Save build directory
         uses: actions/cache/save@v5
         if: steps.build-restore.outputs.cache-hit != 'true'
         with:
           path: build
           key: ${{ steps.build-restore.outputs.cache-primary-key }}
+
+      # }}}
 
       - name: Test
         run: ./utils/fake_tty.py make --assume-old=all test
