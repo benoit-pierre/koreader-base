@@ -305,6 +305,9 @@ struct ifreq {
     uint32_t ifru_route_refcnt;
     int ifru_cap[2];
     uint32_t ifru_functional_type;
+    uint32_t ifru_peer_egress_functional_type;
+    uint8_t ifru_is_directlink;
+    uint8_t ifru_is_vpn;
   } ifr_ifru;
 };
 // cdecl_func_if_nametoindex
