@@ -119,6 +119,7 @@ cdecl_const(EAGAIN);
 cdecl_const(EINTR);
 cdecl_const(EINVAL);
 cdecl_const(ENODEV);
+cdecl_const(ENOPROTOOPT);
 cdecl_const(ENOSYS);
 cdecl_const(EPERM);
 cdecl_const(EPIPE);
@@ -314,6 +315,9 @@ cdecl_const(AF_INET6);
 #if defined(__APPLE__)
 cdecl_const(AF_LINK);
 #endif
+#if defined(__linux__)
+cdecl_const(AF_NETLINK);
+#endif
 cdecl_const(AF_UNIX);
 
 cdecl_const(NI_MAXHOST);
@@ -378,6 +382,8 @@ cdecl_struct(ifmap);
 # endif
 cdecl_struct(ifreq);
 #endif
+
+cdecl_func(if_nametoindex);
 
 #if defined(__linux__) && !defined(__ANDROID__)
 
@@ -545,13 +551,29 @@ cdecl_const(IFF_UP);
 cdecl_const(IPPROTO_IP);
 cdecl_const(IPPROTO_ICMP);
 
+cdecl_const(MSG_PEEK);
+cdecl_const(MSG_TRUNC);
+
 cdecl_const(RTF_GATEWAY);
 cdecl_const(RTF_UP);
 
+cdecl_const(SO_RCVBUF);
+cdecl_const(SO_SNDBUF);
+
+#if defined(__linux__)
+# if !defined(SOL_NETLINK)
+#  define SOL_NETLINK  270
+# endif
+cdecl_const(SOL_NETLINK);
+#endif
+cdecl_const(SOL_SOCKET);
+
 cdecl_func(connect);
+cdecl_func(getsockname);
 cdecl_func(recv);
 cdecl_func(send);
 cdecl_func(sendto);
+cdecl_func(setsockopt);
 cdecl_func(socket);
 
 cdecl_func(gai_strerror);

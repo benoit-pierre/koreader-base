@@ -9,6 +9,8 @@ static const unsigned EINTR = 4;
 static const unsigned EINVAL = 22;
 // cdecl_const_ENODEV
 static const unsigned ENODEV = 19;
+// cdecl_const_ENOPROTOOPT
+static const unsigned ENOPROTOOPT = 42;
 // cdecl_const_ENOSYS
 static const unsigned ENOSYS = 78;
 // cdecl_const_EPERM
@@ -305,6 +307,8 @@ struct ifreq {
     uint32_t ifru_functional_type;
   } ifr_ifru;
 };
+// cdecl_func_if_nametoindex
+unsigned if_nametoindex(const char *);
 // cdecl_type_nfds_t
 typedef unsigned nfds_t;
 // cdecl_const_PTHREAD_CREATE_DETACHED
@@ -466,18 +470,32 @@ static const unsigned IFF_UP = 1;
 static const unsigned IPPROTO_IP = 0;
 // cdecl_const_IPPROTO_ICMP
 static const unsigned IPPROTO_ICMP = 1;
+// cdecl_const_MSG_PEEK
+static const unsigned MSG_PEEK = 2;
+// cdecl_const_MSG_TRUNC
+static const unsigned MSG_TRUNC = 16;
 // cdecl_const_RTF_GATEWAY
 static const unsigned RTF_GATEWAY = 2;
 // cdecl_const_RTF_UP
 static const unsigned RTF_UP = 1;
+// cdecl_const_SO_RCVBUF
+static const unsigned SO_RCVBUF = 4098;
+// cdecl_const_SO_SNDBUF
+static const unsigned SO_SNDBUF = 4097;
+// cdecl_const_SOL_SOCKET
+static const unsigned SOL_SOCKET = 65535;
 // cdecl_func_connect
 int connect(int, const struct sockaddr *, socklen_t);
+// cdecl_func_getsockname
+int getsockname(int, struct sockaddr *, socklen_t *);
 // cdecl_func_recv
 ssize_t recv(int, void *, size_t, int);
 // cdecl_func_send
 ssize_t send(int, const void *, size_t, int);
 // cdecl_func_sendto
 ssize_t sendto(int, const void *, size_t, int, const struct sockaddr *, socklen_t);
+// cdecl_func_setsockopt
+int setsockopt(int, int, int, const void *, socklen_t);
 // cdecl_func_socket
 int socket(int, int, int);
 // cdecl_func_gai_strerror

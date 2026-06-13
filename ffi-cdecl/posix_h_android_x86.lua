@@ -9,6 +9,8 @@ static const unsigned EINTR = 4;
 static const unsigned EINVAL = 22;
 // cdecl_const_ENODEV
 static const unsigned ENODEV = 19;
+// cdecl_const_ENOPROTOOPT
+static const unsigned ENOPROTOOPT = 92;
 // cdecl_const_ENOSYS
 static const unsigned ENOSYS = 38;
 // cdecl_const_EPERM
@@ -164,6 +166,8 @@ struct statvfs {
 static const unsigned AF_INET = 2;
 // cdecl_const_AF_INET6
 static const unsigned AF_INET6 = 10;
+// cdecl_const_AF_NETLINK
+static const unsigned AF_NETLINK = 16;
 // cdecl_const_AF_UNIX
 static const unsigned AF_UNIX = 1;
 // cdecl_const_NI_MAXHOST
@@ -248,6 +252,8 @@ struct ifaddrs {
   } ifa_ifu;
   void *ifa_data;
 };
+// cdecl_func_if_nametoindex
+unsigned if_nametoindex(const char *);
 // cdecl_type_nfds_t
 typedef unsigned nfds_t;
 // cdecl_const_PTHREAD_CREATE_DETACHED
@@ -421,18 +427,34 @@ static const unsigned IFF_UP = 1;
 static const unsigned IPPROTO_IP = 0;
 // cdecl_const_IPPROTO_ICMP
 static const unsigned IPPROTO_ICMP = 1;
+// cdecl_const_MSG_PEEK
+static const unsigned MSG_PEEK = 2;
+// cdecl_const_MSG_TRUNC
+static const unsigned MSG_TRUNC = 32;
 // cdecl_const_RTF_GATEWAY
 static const unsigned RTF_GATEWAY = 2;
 // cdecl_const_RTF_UP
 static const unsigned RTF_UP = 1;
+// cdecl_const_SO_RCVBUF
+static const unsigned SO_RCVBUF = 8;
+// cdecl_const_SO_SNDBUF
+static const unsigned SO_SNDBUF = 7;
+// cdecl_const_SOL_NETLINK
+static const unsigned SOL_NETLINK = 270;
+// cdecl_const_SOL_SOCKET
+static const unsigned SOL_SOCKET = 1;
 // cdecl_func_connect
 int connect(int, const struct sockaddr *, socklen_t);
+// cdecl_func_getsockname
+int getsockname(int, struct sockaddr *, socklen_t *);
 // cdecl_func_recv
 ssize_t recv(int, void *, size_t, int);
 // cdecl_func_send
 ssize_t send(int, const void *, size_t, int);
 // cdecl_func_sendto
 ssize_t sendto(int, const void *, size_t, int, const struct sockaddr *, socklen_t);
+// cdecl_func_setsockopt
+int setsockopt(int, int, int, const void *, socklen_t);
 // cdecl_func_socket
 int socket(int, int, int);
 // cdecl_func_gai_strerror

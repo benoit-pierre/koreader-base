@@ -28,9 +28,15 @@ static const unsigned ENODEV = 19;
 ]]
 
 if --[[ android_arm|android_arm64|android_x64|android_x86|linux_arm|linux_arm64|linux_x64 ]] bit.band(platform, 0x7f) ~= 0 then
-ffi.cdef[[ static const unsigned ENOSYS = 38; ]]
+ffi.cdef[[
+static const unsigned ENOPROTOOPT = 92;
+static const unsigned ENOSYS = 38;
+]]
 elseif --[[ macos ]] platform == 0x80 then
-ffi.cdef[[ static const unsigned ENOSYS = 78; ]]
+ffi.cdef[[
+static const unsigned ENOPROTOOPT = 42;
+static const unsigned ENOSYS = 78;
+]]
 end
 
 ffi.cdef[[
@@ -488,6 +494,10 @@ if --[[ macos ]] platform == 0x80 then
 ffi.cdef[[ static const unsigned AF_LINK = 18; ]]
 end
 
+if --[[ android_arm|android_arm64|android_x64|android_x86|linux_arm|linux_arm64|linux_x64 ]] bit.band(platform, 0x7f) ~= 0 then
+ffi.cdef[[ static const unsigned AF_NETLINK = 16; ]]
+end
+
 ffi.cdef[[
 static const unsigned AF_UNIX = 1;
 static const unsigned NI_MAXHOST = 1025;
@@ -828,6 +838,8 @@ struct ifreq {
 ]]
 end
 
+ffi.cdef[[ unsigned if_nametoindex(const char *); ]]
+
 if --[[ linux_arm|linux_arm64|linux_x64 ]] bit.band(platform, 0x70) ~= 0 then
 ffi.cdef[[
 static const unsigned SIOCGIFHWADDR = 35111;
@@ -1113,12 +1125,49 @@ static const unsigned IFF_LOOPBACK = 8;
 static const unsigned IFF_UP = 1;
 static const unsigned IPPROTO_IP = 0;
 static const unsigned IPPROTO_ICMP = 1;
+static const unsigned MSG_PEEK = 2;
+]]
+
+if --[[ android_arm|android_arm64|android_x64|android_x86|linux_arm|linux_arm64|linux_x64 ]] bit.band(platform, 0x7f) ~= 0 then
+ffi.cdef[[ static const unsigned MSG_TRUNC = 32; ]]
+elseif --[[ macos ]] platform == 0x80 then
+ffi.cdef[[ static const unsigned MSG_TRUNC = 16; ]]
+end
+
+ffi.cdef[[
 static const unsigned RTF_GATEWAY = 2;
 static const unsigned RTF_UP = 1;
+]]
+
+if --[[ android_arm|android_arm64|android_x64|android_x86|linux_arm|linux_arm64|linux_x64 ]] bit.band(platform, 0x7f) ~= 0 then
+ffi.cdef[[
+static const unsigned SO_RCVBUF = 8;
+static const unsigned SO_SNDBUF = 7;
+]]
+elseif --[[ macos ]] platform == 0x80 then
+ffi.cdef[[
+static const unsigned SO_RCVBUF = 4098;
+static const unsigned SO_SNDBUF = 4097;
+]]
+end
+
+if --[[ android_arm|android_arm64|android_x64|android_x86|linux_arm|linux_arm64|linux_x64 ]] bit.band(platform, 0x7f) ~= 0 then
+ffi.cdef[[ static const unsigned SOL_NETLINK = 270; ]]
+end
+
+if --[[ android_arm|android_arm64|android_x64|android_x86|linux_arm|linux_arm64|linux_x64 ]] bit.band(platform, 0x7f) ~= 0 then
+ffi.cdef[[ static const unsigned SOL_SOCKET = 1; ]]
+elseif --[[ macos ]] platform == 0x80 then
+ffi.cdef[[ static const unsigned SOL_SOCKET = 65535; ]]
+end
+
+ffi.cdef[[
 int connect(int, const struct sockaddr *, socklen_t);
+int getsockname(int, struct sockaddr *, socklen_t *);
 ssize_t recv(int, void *, size_t, int);
 ssize_t send(int, const void *, size_t, int);
 ssize_t sendto(int, const void *, size_t, int, const struct sockaddr *, socklen_t);
+int setsockopt(int, int, int, const void *, socklen_t);
 int socket(int, int, int);
 const char *gai_strerror(int);
 ]]
