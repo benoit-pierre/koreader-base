@@ -167,7 +167,11 @@ jobs:
       - name: Build
         id: build
         if: steps.build-restore.outputs.cache-hit != 'true'
-        run: make
+        run: |
+          set -x
+          exec 2>&1
+          make posix-ffi
+          git --no-pager diff --color=always --exit-code
 
       - name: Dump build timings
         if: contains('failure success', steps.build.conclusion) && !cancelled()
