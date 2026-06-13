@@ -1,0 +1,15 @@
+diff --git a/turbo/cdef.lua b/turbo/cdef.lua
+old mode 100755
+new mode 100644
+diff --git a/turbo/platform.lua b/turbo/platform.lua
+old mode 100755
+new mode 100644
+diff --git a/turbo/signal.lua b/turbo/signal.lua
+old mode 100755
+new mode 100644
+diff --git a/turbo/socket_ffi.lua b/turbo/socket_ffi.lua
+old mode 100755
+new mode 100644
+diff --git a/turbo/syscall.lua b/turbo/syscall.lua
+old mode 100755
+new mode 100644
