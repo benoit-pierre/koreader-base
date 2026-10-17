@@ -1,6 +1,31 @@
 cmake_minimum_required(VERSION 3.17.5)
 project(sqlite LANGUAGES C)
 
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/sqlite3.c)
+    set(AMALGAMATION TRUE)
+else()
+    set(AMALGAMATION FALSE)
+endif()
+
+option(HOSTCC "host compiler (for non-malgamated builds)")
+
+if(NOT AMALGAMATION)
+    if(NOT DEFINED HOSTCC)
+        find_program(HOSTCC NAMES gcc cc clang)
+        if(NOT HOSTCC)
+            message(FATAL_ERROR "host compiler not found!")
+        endif()
+    endif()
+    find_program(LEMON lemon)
+    if(NOT LEMON)
+        message(FATAL_ERROR "lemon not found!")
+    endif()
+    find_program(TCLSH tclsh)
+    if(NOT TCLSH)
+        message(FATAL_ERROR "tclsh not found!")
+    endif()
+endif()
+
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 
@@ -40,6 +65,58 @@ while(CHECKS)
     endif()
 endwhile()
 
+if(NOT AMALGAMATION)
+    add_custom_command(
+        OUTPUT keywordhash.h
+        COMMAND sh -c "./mkkeywordhash >keywordhash.h"
+        MAIN_DEPENDENCY mkkeywordhash
+        VERBATIM
+    )
+    add_custom_command(
+        OUTPUT mkkeywordhash
+        COMMAND sh -c "${HOSTCC} -o mkkeywordhash ${CMAKE_CURRENT_SOURCE_DIR}/tool/mkkeywordhash.c"
+        MAIN_DEPENDENCY tool/mkkeywordhash.c
+        VERBATIM
+    )
+    add_custom_command(
+        OUTPUT mksourceid
+        COMMAND sh -c "${HOSTCC} -o mksourceid ${CMAKE_CURRENT_SOURCE_DIR}/tool/mksourceid.c"
+        MAIN_DEPENDENCY tool/mksourceid.c
+        VERBATIM
+    )
+    add_custom_command(
+        OUTPUT parse.c parse.h
+        COMMAND lemon -d${CMAKE_CURRENT_BINARY_DIR} -S ${CMAKE_CURRENT_SOURCE_DIR}/src/parse.y
+        MAIN_DEPENDENCY src/parse.y
+        VERBATIM
+    )
+    add_custom_command(
+        OUTPUT opcodes.h
+        COMMAND sh -c "cat parse.h \"$1/src/vdbe.c\" | \"$2\" \"$1/tool/mkopcodeh.tcl\" >opcodes.h" -- ${CMAKE_CURRENT_SOURCE_DIR} ${TCLSH}
+        MAIN_DEPENDENCY src/vdbe.c
+        DEPENDS parse.h tool/mkopcodeh.tcl
+        VERBATIM
+    )
+    add_custom_command(
+        OUTPUT pragma.h
+        COMMAND ${TCLSH} ${CMAKE_CURRENT_SOURCE_DIR}/tool/mkpragmatab.tcl
+        MAIN_DEPENDENCY tool/mkpragmatab.tcl
+        VERBATIM
+    )
+    add_custom_command(
+        OUTPUT sqlite3.h
+        COMMAND ${TCLSH} ${CMAKE_CURRENT_SOURCE_DIR}/tool/mksqlite3h.tcl ${CMAKE_SOURCE_DIR} -o sqlite3.h
+        MAIN_DEPENDENCY tool/mksqlite3h.tcl
+        DEPENDS mksourceid
+        VERBATIM
+    )
+    set(SQLITE3_H ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.h)
+    set(SQLITE3EXT_H src/sqlite3ext.h)
+else()
+    set(SQLITE3_H sqlite3.h)
+    set(SQLITE3EXT_H sqlite3ext.h)
+endif()
+
 add_library(sqlite3)
 set_target_properties(sqlite3 PROPERTIES SOVERSION 0)
 target_compile_definitions(sqlite3 PRIVATE
@@ -71,8 +148,104 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         SQLITE_OMIT_EXPLAIN
     )
 endif()
-target_sources(sqlite3 PRIVATE sqlite3.c)
+if(AMALGAMATION)
+    target_sources(sqlite3 PRIVATE sqlite3.c)
+else()
+    target_include_directories(sqlite3 PRIVATE src ${CMAKE_CURRENT_BINARY_DIR})
+    target_sources(sqlite3 PRIVATE
+        # Generated.
+        keywordhash.h
+        opcodes.h
+        pragma.h
+        parse.h
+        parse.c
+        sqlite3.h
+        # Static.
+        src/alter.c
+        src/analyze.c
+        src/attach.c
+        src/auth.c
+        src/backup.c
+        src/bitvec.c
+        src/btmutex.c
+        src/btree.c
+        src/build.c
+        src/callback.c
+        src/carray.c
+        src/complete.c
+        # ctime.c
+        src/date.c
+        src/dbpage.c
+        src/dbstat.c
+        src/delete.c
+        src/expr.c
+        src/fault.c
+        src/fkey.c
+        src/func.c
+        src/global.c
+        src/hash.c
+        src/insert.c
+        src/json.c
+        src/legacy.c
+        src/loadext.c
+        src/main.c
+        src/malloc.c
+        src/mem0.c
+        src/mem1.c
+        src/mem2.c
+        src/mem3.c
+        src/mem5.c
+        src/memdb.c
+        src/memjournal.c
+        src/mutex.c
+        src/mutex_noop.c
+        src/mutex_unix.c
+        src/mutex_w32.c
+        src/notify.c
+        src/os.c
+        src/os_kv.c
+        src/os_unix.c
+        src/os_win.c
+        src/pager.c
+        src/pcache.c
+        src/pcache1.c
+        src/pragma.c
+        src/prepare.c
+        src/printf.c
+        src/random.c
+        src/resolve.c
+        src/rowset.c
+        src/select.c
+        src/status.c
+        src/shell.c.in
+        src/table.c
+        src/threads.c
+        src/tokenize.c
+        src/treeview.c
+        src/trigger.c
+        src/utf.c
+        src/update.c
+        src/upsert.c
+        src/util.c
+        src/vacuum.c
+        src/vdbe.c
+        src/vdbeapi.c
+        src/vdbeaux.c
+        src/vdbeblob.c
+        src/vdbemem.c
+        src/vdbesort.c
+        src/vdbetrace.c
+        src/vdbevtab.c
+        src/vtab.c
+        src/wal.c
+        src/walker.c
+        src/where.c
+        src/wherecode.c
+        src/whereexpr.c
+        src/window.c
+    )
+endif()
 target_link_libraries(sqlite3 m Threads::Threads)
 
 install(TARGETS sqlite3)
-install(FILES sqlite3.h sqlite3ext.h TYPE INCLUDE)
+install(FILES ${SQLITE3_H} ${SQLITE3EXT_H} TYPE INCLUDE)
