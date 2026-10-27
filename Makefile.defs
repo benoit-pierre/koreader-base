@@ -364,14 +364,14 @@ else
   AR := $(call ensure_exe_abspath,ar)
   LD := $(call ensure_exe_abspath,ld)
   NM := $(call ensure_exe_abspath,nm)
+  RANLIB := $(call ensure_exe_abspath,ranlib)
   ifndef DARWIN
     OBJCOPY := $(call ensure_exe_abspath,objcopy)
+    READELF := $(call ensure_exe_abspath,readelf)
   endif
   ifdef WIN32
     RC := $(call ensure_exe_abspath,windres)
   endif
-  RANLIB := $(call ensure_exe_abspath,ranlib)
-  READELF := $(call ensure_exe_abspath,readelf)
 endif
 
 ifdef EMULATE_READER
