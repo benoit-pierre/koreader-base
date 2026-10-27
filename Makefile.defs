@@ -364,18 +364,31 @@ else
   AR := $(call ensure_exe_abspath,ar)
   LD := $(call ensure_exe_abspath,ld)
   NM := $(call ensure_exe_abspath,nm)
-  OBJCOPY := $(call ensure_exe_abspath,objcopy)
-  RC := $(if $(WIN32),$(call ensure_exe_abspath,windres))
+  ifndef DARWIN
+    OBJCOPY := $(call ensure_exe_abspath,objcopy)
+  endif
+  ifdef WIN32
+    RC := $(call ensure_exe_abspath,windres)
+  endif
   RANLIB := $(call ensure_exe_abspath,ranlib)
   READELF := $(call ensure_exe_abspath,readelf)
 endif
 
-HOSTSTRIP := $(call ensure_exe_abspath,strip)
-HOSTAR := $(call ensure_exe_abspath,ar)
-HOSTLD := $(call ensure_exe_abspath,ld)
-HOSTOBJCOPY := $(call ensure_exe_abspath,objcopy)
-HOSTRANLIB := $(call ensure_exe_abspath,ranlib)
-HOSTREADELF := $(call ensure_exe_abspath,readelf)
+ifdef EMULATE_READER
+  HOSTSTRIP := $(STRIP)
+  HOSTAR := $(AR)
+  HOSTLD := $(LD)
+  HOSTOBJCOPY := $(OBJCOPY)
+  HOSTRANLIB := $(RANLIB)
+  HOSTREADELF := $(READELF)
+else
+  HOSTSTRIP := $(call ensure_exe_abspath,strip)
+  HOSTAR := $(call ensure_exe_abspath,ar)
+  HOSTLD := $(call ensure_exe_abspath,ld)
+  HOSTOBJCOPY := $(call ensure_exe_abspath,objcopy)
+  HOSTRANLIB := $(call ensure_exe_abspath,ranlib)
+  HOSTREADELF := $(call ensure_exe_abspath,readelf)
+endif
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its
 # Makefiles do some tricky stuff to differentiate HOST/TARGET
@@ -700,14 +713,6 @@ ifdef EMULATE_READER
   REALCXX := $(HOSTCXX)
   HOSTCC := $(strip $(CCACHE) $(HOSTCC))
   HOSTCXX := $(strip $(CCACHE) $(HOSTCXX))
-  CC := $(HOSTCC)
-  CXX := $(HOSTCXX)
-  STRIP := $(HOSTSTRIP)
-  AR := $(HOSTAR)
-  LD := $(HOSTLD)
-  OBJCOPY := $(HOSTOBJCOPY)
-  RANLIB := $(HOSTRANLIB)
-  READELF := $(HOSTREADELF)
   CFLAGS += $(TARGET_CFLAGS)
   CXXFLAGS += $(TARGET_CFLAGS)
   export PKG_CONFIG_LIBDIR := $(abspath $(STAGING_DIR)/lib/pkgconfig)$(if $(PKG_CONFIG_LIBDIR),:$(PKG_CONFIG_LIBDIR))
@@ -900,7 +905,7 @@ set(CMAKE_LD $(LD) CACHE FILEPATH "LD")
 set(CMAKE_NM $(NM) CACHE FILEPATH "NM")
 set(CMAKE_RANLIB $(RANLIB) CACHE FILEPATH "RanLib")
 set(CMAKE_READELF $(READELF) CACHE FILEPATH "ReadELF")
-$(if $(WIN32),set(CMAKE_RC_COMPILER $(RC) CACHE FILEPATH "Resource Compiler"))
+set(CMAKE_RC_COMPILER $(RC) CACHE FILEPATH "Resource Compiler")
 set(CMAKE_STRIP true CACHE FILEPATH "Strip")
 
 # Set path(s) to search for libraries/binaries/headers.
