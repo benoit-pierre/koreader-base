@@ -1,7 +1,9 @@
 comma := ,
 space := $(empty) $(empty)
 
-which = $(firstword $(wildcard $(addsuffix /$(1),$(subst :, ,$(PATH)))))
+# Expand executable name to full path.
+exe_abspath = $(firstword $(filter /%,$1) $(wildcard $(addsuffix /$1,$(subst :, ,$(PATH)))))
+ensure_exe_abspath = $(or $(call exe_abspath,$1),$(error $1 not found in PATH))
 
 padded_version = $(subst $(space),0,$(shell printf '.%2s' $(subst .,$(space),$1)))
 at_least_version = $(filter $(call padded_version,$2),$(firstword $(sort $(call padded_version,$1) $(call padded_version,$2))))
@@ -40,7 +42,7 @@ endif
 ifeq ($(USE_NO_CCACHE), 1)
   CCACHE :=
 else
-  CCACHE := $(or $(CCACHE),$(shell command -v ccache))
+  override CCACHE := $(if $(CCACHE),$(call ensure_exe_abspath,$(CCACHE)),$(call exe_abspath,ccache))
 endif
 
 TOOLCHAIN_DIR = $(abspath $(KOR_BASE)/toolchain)
@@ -54,7 +56,7 @@ CMAKE := cmake -Wdev --warn-uninitialized
 CMAKE_VERSION := $(word 3,$(shell cmake --version))
 USING_CMAKE_3_24_OR_BETTER := $(call at_least_version,$(CMAKE_VERSION),3.24.0)
 
-NINJA := $(or $(NINJA),ninja)
+override NINJA := $(call ensure_exe_abspath,$(or $(NINJA),ninja))
 
 NINJA_VERSION := $(shell $(NINJA) --version)
 USING_NINJA_1_13_OR_BETTER := $(call at_least_version,$(NINJA_VERSION),1.13.0)
@@ -304,77 +306,76 @@ SYMLINK += -snfr
 
 # set cross-compiler/host CC and CXX
 ifneq (,$(USE_CLANG))
-	ifdef CHOST
-		CC:=$(CHOST)-clang
-		CXX:=$(CHOST)-clang++
-	else
-		CC:=clang
-		CXX:=clang++
-	endif
-	HOSTCC:=clang
-	HOSTCXX:=clang++
-	# quiet flag
-	QFLAGS:=-Wno-ignored-optimization-argument -Wno-unknown-warning-option
-	# Tone down some very verbose Clang 5 warnings, too.
-	# This one can be *extremely* verbose
-	QFLAGS+=-Wno-array-bounds
-	# This one checks if -I flags are actually used, even at steps where it makes little sense.
-	# Since we massively pass -I/-L flags ourselves, this becomes insane really quick.
-	QFLAGS+=-Wno-unused-command-line-argument
-	# Let FreeType do its thing...
-	QFLAGS+=-Wno-self-assign
-	# Also extremely verbose...
-	QFLAGS+=-Wno-parentheses-equality
-	# For dropbear's libtom...
-	QFLAGS+=-Wno-macro-redefined
+  HOSTCC := $(call ensure_exe_abspath,clang)
+  HOSTCXX := $(call ensure_exe_abspath,clang++)
+  ifdef CHOST
+    CC := $(call ensure_exe_abspath,$(CHOST)-clang)
+    CXX := $(call ensure_exe_abspath,$(CHOST)-clang++)
+  else
+    CC := $(HOSTCC)
+    CXX := $(HOSTCXX)
+  endif
+  # quiet flag
+  QFLAGS := -Wno-ignored-optimization-argument -Wno-unknown-warning-option
+  # Tone down some very verbose Clang 5 warnings, too.
+  # This one can be *extremely* verbose
+  QFLAGS += -Wno-array-bounds
+  # This one checks if -I flags are actually used, even at steps where it makes little sense.
+  # Since we massively pass -I/-L flags ourselves, this becomes insane really quick.
+  QFLAGS += -Wno-unused-command-line-argument
+  # Let FreeType do its thing...
+  QFLAGS += -Wno-self-assign
+  # Also extremely verbose...
+  QFLAGS += -Wno-parentheses-equality
+  # For dropbear's libtom...
+  QFLAGS += -Wno-macro-redefined
 else
-	ifdef CHOST
-		CC:=$(CHOST)-gcc
-		CXX:=$(CHOST)-g++
-	else
-		CC:=gcc
-		CXX:=g++
-	endif
-	HOSTCC:=gcc
-	HOSTCXX:=g++
-	QFLAGS:=
+  HOSTCC := $(call ensure_exe_abspath,gcc)
+  HOSTCXX := $(call ensure_exe_abspath,g++)
+  ifdef CHOST
+    CC := $(call ensure_exe_abspath,$(CHOST)-gcc)
+    CXX := $(call ensure_exe_abspath,$(CHOST)-g++)
+  else
+    CC := $(HOSTCC)
+    CXX := $(HOSTCXX)
+  endif
+  QFLAGS :=
 endif
 
 # set cross-compiler/host AR LD RANLIB
 ifdef ANDROID
-	STRIP:=llvm-strip
-	AR:=llvm-ar
-	LD:=ld
-	NM:=llvm-nm
-	OBJCOPY:=llvm-objcopy
-	RANLIB:=llvm-ranlib
-	READELF:=llvm-readelf
+  STRIP := $(call ensure_exe_abspath,llvm-strip)
+  AR := $(call ensure_exe_abspath,llvm-ar)
+  LD := $(call ensure_exe_abspath,ld)
+  NM := $(call ensure_exe_abspath,llvm-nm)
+  OBJCOPY := $(call ensure_exe_abspath,llvm-objcopy)
+  RANLIB := $(call ensure_exe_abspath,llvm-ranlib)
+  READELF := $(call ensure_exe_abspath,llvm-readelf)
 else ifdef CHOST
-	STRIP:=$(CHOST)-strip
-	AR:=$(CHOST)-ar
-	LD:=$(CHOST)-ld
-	NM:=$(CHOST)-nm
-	OBJCOPY:=$(CHOST)-objcopy
-	RC:=$(CHOST)-windres
-	RANLIB:=$(CHOST)-ranlib
-	READELF:=$(CHOST)-readelf
+  STRIP := $(call ensure_exe_abspath,$(CHOST)-strip)
+  AR := $(call ensure_exe_abspath,$(CHOST)-ar)
+  LD := $(call ensure_exe_abspath,$(CHOST)-ld)
+  NM := $(call ensure_exe_abspath,$(CHOST)-nm)
+  OBJCOPY := $(call ensure_exe_abspath,$(CHOST)-objcopy)
+  RANLIB := $(call ensure_exe_abspath,$(CHOST)-ranlib)
+  READELF := $(call ensure_exe_abspath,$(CHOST)-readelf)
 else
-	STRIP:=strip
-	AR:=ar
-	LD:=ld
-	NM:=nm
-	OBJCOPY:=objcopy
-	RC:=windres
-	RANLIB:=ranlib
-	READELF:=readelf
+  STRIP := $(call ensure_exe_abspath,strip)
+  AR := $(call ensure_exe_abspath,ar)
+  LD := $(call ensure_exe_abspath,ld)
+  NM := $(call ensure_exe_abspath,nm)
+  OBJCOPY := $(call ensure_exe_abspath,objcopy)
+  RC := $(if $(WIN32),$(call ensure_exe_abspath,windres))
+  RANLIB := $(call ensure_exe_abspath,ranlib)
+  READELF := $(call ensure_exe_abspath,readelf)
 endif
 
-HOSTSTRIP:=strip
-HOSTAR:=ar
-HOSTLD:=ld
-HOSTOBJCOPY:=objcopy
-HOSTRANLIB:=ranlib
-HOSTREADELF:=readelf
+HOSTSTRIP := $(call ensure_exe_abspath,strip)
+HOSTAR := $(call ensure_exe_abspath,ar)
+HOSTLD := $(call ensure_exe_abspath,ld)
+HOSTOBJCOPY := $(call ensure_exe_abspath,objcopy)
+HOSTRANLIB := $(call ensure_exe_abspath,ranlib)
+HOSTREADELF := $(call ensure_exe_abspath,readelf)
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its
 # Makefiles do some tricky stuff to differentiate HOST/TARGET
@@ -694,43 +695,43 @@ BUILD_ENTRYPOINT = $(CMAKE_DIR)/build.ninja
 # in that case.
 
 ifdef EMULATE_READER
-	# Regular
-	REALCC:=$(HOSTCC)
-	REALCXX:=$(HOSTCXX)
-	HOSTCC:=$(strip $(CCACHE) $(HOSTCC))
-	HOSTCXX:=$(strip $(CCACHE) $(HOSTCXX))
-	CC:=$(HOSTCC)
-	CXX:=$(HOSTCXX)
-	STRIP:=$(HOSTSTRIP)
-	AR:=$(HOSTAR)
-	LD:=$(HOSTLD)
-	OBJCOPY:=$(HOSTOBJCOPY)
-	RANLIB:=$(HOSTRANLIB)
-	READELF:=$(HOSTREADELF)
-	CFLAGS+=$(TARGET_CFLAGS)
-	CXXFLAGS+=$(TARGET_CFLAGS)
-	export PKG_CONFIG_LIBDIR := $(abspath $(STAGING_DIR)/lib/pkgconfig)$(if $(PKG_CONFIG_LIBDIR),:$(PKG_CONFIG_LIBDIR))
+  # Regular
+  REALCC := $(HOSTCC)
+  REALCXX := $(HOSTCXX)
+  HOSTCC := $(strip $(CCACHE) $(HOSTCC))
+  HOSTCXX := $(strip $(CCACHE) $(HOSTCXX))
+  CC := $(HOSTCC)
+  CXX := $(HOSTCXX)
+  STRIP := $(HOSTSTRIP)
+  AR := $(HOSTAR)
+  LD := $(HOSTLD)
+  OBJCOPY := $(HOSTOBJCOPY)
+  RANLIB := $(HOSTRANLIB)
+  READELF := $(HOSTREADELF)
+  CFLAGS += $(TARGET_CFLAGS)
+  CXXFLAGS += $(TARGET_CFLAGS)
+  export PKG_CONFIG_LIBDIR := $(abspath $(STAGING_DIR)/lib/pkgconfig)$(if $(PKG_CONFIG_LIBDIR),:$(PKG_CONFIG_LIBDIR))
 else
-	REALCC:=$(CC)
-	REALCXX:=$(CXX)
-	CC:=$(strip $(CCACHE) $(CC))
-	CXX:=$(strip $(CCACHE) $(CXX))
-	CFLAGS+=$(TARGET_CFLAGS) $(COMPAT_CFLAGS)
-	CXXFLAGS+=$(TARGET_CFLAGS) $(COMPAT_CXXFLAGS)
-	# Make sure we always have mmap() support.
-	# This is critical for FreeType, since the usage of platform-specific code depends on this,
-	# and without it, we don't get CLOEXEC handling, which is problematic on Kobos, where we spawn stuff that might
-	# survive us, and if they inherit some of our fds pointing to the removable user area, bad things happen when it
-	# gets unmounted for USBMS handling....
-	export ac_cv_func_mmap_fixed_mapped=yes
-	# Never let pkg-config pickup native libraries (we don't actually rely on pkg-config anywhere, we do it all by hand).
-	# NOTE: Let people shoot themselves in the foot with custom pkg-config wrappers?
-	#undefine PKG_CONFIG
-	#unexport PKG_CONFIG
-	export PKG_CONFIG_LIBDIR := $(abspath $(STAGING_DIR)/lib/pkgconfig)
-	export PKG_CONFIG_PATH :=
-	# Nix the NixOS override, just to be sure.
-	export PKG_CONFIG_PATH_FOR_TARGET :=
+  REALCC := $(CC)
+  REALCXX := $(CXX)
+  CC := $(strip $(CCACHE) $(CC))
+  CXX := $(strip $(CCACHE) $(CXX))
+  CFLAGS += $(TARGET_CFLAGS) $(COMPAT_CFLAGS)
+  CXXFLAGS += $(TARGET_CFLAGS) $(COMPAT_CXXFLAGS)
+  # Make sure we always have mmap() support.
+  # This is critical for FreeType, since the usage of platform-specific code depends on this,
+  # and without it, we don't get CLOEXEC handling, which is problematic on Kobos, where we spawn stuff that might
+  # survive us, and if they inherit some of our fds pointing to the removable user area, bad things happen when it
+  # gets unmounted for USBMS handling....
+  export ac_cv_func_mmap_fixed_mapped=yes
+  # Never let pkg-config pickup native libraries (we don't actually rely on pkg-config anywhere, we do it all by hand).
+  # NOTE: Let people shoot themselves in the foot with custom pkg-config wrappers?
+  #undefine PKG_CONFIG
+  #unexport PKG_CONFIG
+  export PKG_CONFIG_LIBDIR := $(abspath $(STAGING_DIR)/lib/pkgconfig)
+  export PKG_CONFIG_PATH :=
+  # Nix the NixOS override, just to be sure.
+  export PKG_CONFIG_PATH_FOR_TARGET :=
 endif
 
 # not necessary to use PIC flag for win32 which has relocation table in dll
@@ -880,8 +881,8 @@ set(CMAKE_CXX_FLAGS_INIT "$(strip $(CXXFLAGS))")
 
 # OBJC language (for SDL3 on macOS).
 $(if $(CCACHE),set(CMAKE_OBJC_COMPILER_LAUNCHER $(CCACHE)))
-# NOTE: we need to use the full path, or CMake >=3.21 blows a gasket…
-set(CMAKE_OBJC_COMPILER $(call which,$(REALCC)))
+# NOTE: this needs to be the absolute path, or CMake >=3.21 blows a gasket…
+set(CMAKE_OBJC_COMPILER $(REALCC))
 
 # Release only flags: prevent CMake from messing
 # with our custom optimization level and flags.
@@ -973,9 +974,9 @@ set(STAGING_DIR    $(abspath $(STAGING_DIR)))
 set(SPEC_ROCKS_DIR $(abspath $(SPEC_ROCKS_DIR)))
 set(THIRDPARTY_DIR $(abspath $(THIRDPARTY_DIR)))
 
-set(MAKE $(MAKE))
+set(MAKE $(call ensure_exe_abspath,$(MAKE)))
 set(NINJA $(NINJA))
-set(WGET $(WGET))
+set(WGET $(call ensure_exe_abspath,$(WGET)))
 
 list(PREPEND CMAKE_MODULE_PATH $${THIRDPARTY_DIR}/cmake_modules)
 

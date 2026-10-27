@@ -33,7 +33,8 @@ else()
     assert_var_defined(HOSTCFLAGS)
 
     # To recap, luajit builds:
-    # - its TARGET_CC from CROSS+CC, so CC need to be set to HOSTCC.
+    # - set various XXX_CC variables from CROSS+CC, so we need to
+    #   override them or our absolute path CC will break the build.
     # - its HOST/TARGET_CFLAGS based on CFLAGS, so we need a neutral
     #   CFLAGS without arch.
 
@@ -50,18 +51,22 @@ else()
     endif()
 
     list(APPEND BUILD_ARGS
-        "CROSS=${CCACHE} ${CHOST}-"
-        CC=${HOSTCC}
+        CC=false
+        CROSS=${CHOST}-
         CFLAGS=${BASE_CFLAGS}
+        DYNAMIC_CC=${CC}
         LDFLAGS=
         "HOST_CC=${CCACHE} ${HOST_CC}"
         HOST_CFLAGS=${HOSTCFLAGS}
         HOST_LDFLAGS=
         "TARGET_AR=${AR} rcus"
+        STATIC_CC=${CC}
         "TARGET_CFLAGS=${CFLAGS} -DLUAJIT_SECURITY_STRHASH=0 -DLUAJIT_SECURITY_STRID=0"
+        TARGET_LD=${CC}
         TARGET_LDFLAGS=${LDFLAGS}
         TARGET_RANLIB=${RANLIB}
         TARGET_SHLDFLAGS=${LDFLAGS}
+        TARGET_STRIP=${STRIP}
     )
     if(ANDROID)
         list(APPEND BUILD_ARGS TARGET_SYS=Linux)
