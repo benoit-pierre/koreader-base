@@ -172,62 +172,60 @@ jobs:
           cat build/cmake/toolchain.cmake
           make sdl3
 
-      - run: false
+      # - name: Dump build timings
+      #   if: contains('failure success', steps.build.conclusion) && !cancelled()
+      #   run: make buildstats
 
-      - name: Dump build timings
-        if: contains('failure success', steps.build.conclusion) && !cancelled()
-        run: make buildstats
+      # # }}}
 
-      # }}}
+      # # Clean & save build cache. {{{
 
-      # Clean & save build cache. {{{
+      # - name: Clean build cache
+      #   if: contains('failure success', steps.build.conclusion) && !cancelled()
+      #   run: |
+      #     set -x
+      #     ccache --cleanup >/dev/null
+      #     ccache --show-stats --verbose
 
-      - name: Clean build cache
-        if: contains('failure success', steps.build.conclusion) && !cancelled()
-        run: |
-          set -x
-          ccache --cleanup >/dev/null
-          ccache --show-stats --verbose
+      # - name: Save build cache
+      #   uses: actions/cache/save@v5
+      #   if: steps.build-restore.outputs.cache-hit != 'true' && steps.ccache-restore.outputs.cache-hit != 'true'
+      #   with:
+      #     path: *CCACHE_DIR
+      #     key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
 
-      - name: Save build cache
-        uses: actions/cache/save@v5
-        if: steps.build-restore.outputs.cache-hit != 'true' && steps.ccache-restore.outputs.cache-hit != 'true'
-        with:
-          path: *CCACHE_DIR
-          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+      # # }}}
 
-      # }}}
+      # # Check FFI cdecls are up-to-date. {{{
 
-      # Check FFI cdecls are up-to-date. {{{
+      # - name: Check FFI cdecls are up-to-date
+      #   id: ffi
+      #   if: steps.build-restore.outputs.cache-hit != 'true'
+      #   run: |
+      #     set -x
+      #     make ffi
+      #     git --no-pager diff --color=always --exit-code ffi
 
-      - name: Check FFI cdecls are up-to-date
-        id: ffi
-        if: steps.build-restore.outputs.cache-hit != 'true'
-        run: |
-          set -x
-          make ffi
-          git --no-pager diff --color=always --exit-code ffi
+      # # }}}
 
-      # }}}
+      # # Dump & check binaries. {{{
 
-      # Dump & check binaries. {{{
+      # - name: Dump binaries runtime path & dependencies
+      #   run: make bininfo
 
-      - name: Dump binaries runtime path & dependencies
-        run: make bininfo
+      # - name: Checking binaries for missing dependencies
+      #   run: make bincheck
 
-      - name: Checking binaries for missing dependencies
-        run: make bincheck
+      # # }}}
 
-      # }}}
+      # - name: Save build directory
+      #   uses: actions/cache/save@v5
+      #   if: steps.build-restore.outputs.cache-hit != 'true'
+      #   with:
+      #     path: *BUILD_PATHS
+      #     key: ${{ steps.build-restore.outputs.cache-primary-key }}
 
-      - name: Save build directory
-        uses: actions/cache/save@v5
-        if: steps.build-restore.outputs.cache-hit != 'true'
-        with:
-          path: *BUILD_PATHS
-          key: ${{ steps.build-restore.outputs.cache-primary-key }}
+      # - name: Test
+      #   run: ./utils/fake_tty.py make --assume-old=all test
 
-      - name: Test
-        run: ./utils/fake_tty.py make --assume-old=all test
-
-# vim: foldmethod=marker foldlevel=0
+# # vim: foldmethod=marker foldlevel=0
