@@ -23,11 +23,11 @@ jobs:
             xcode_version: '16.4'
             deployment_target: '10.15'
             jobs: 5
-          # - image: '15'
-          #   platform: 'ARM64'
-          #   xcode_version: '16.4'
-          #   deployment_target: '11.0'
-          #   jobs: 4
+          - image: '15'
+            platform: 'ARM64'
+            xcode_version: '16.4'
+            deployment_target: '11.0'
+            jobs: 4
 
     name: "macOS ${{ matrix.image }} ${{ matrix.platform }} 🔨${{ matrix.xcode_version }} 🎯${{ matrix.deployment_target }}"
 

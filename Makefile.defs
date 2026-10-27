@@ -880,6 +880,7 @@ set(CMAKE_CXX_FLAGS_INIT "$(strip $(CXXFLAGS))")
 
 # OBJC language (for SDL3 on macOS).
 $(if $(CCACHE),set(CMAKE_OBJC_COMPILER_LAUNCHER $(CCACHE)))
+# NOTE: we need to use the full path, or CMake >=3.21 blows a gasket…
 set(CMAKE_OBJC_COMPILER $(call which,$(REALCC)))
 
 # Release only flags: prevent CMake from messing
