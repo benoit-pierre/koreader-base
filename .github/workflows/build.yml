@@ -172,6 +172,8 @@ jobs:
           cat build/cmake/toolchain.cmake
           make sdl3
 
+      - run: false
+
       - name: Dump build timings
         if: contains('failure success', steps.build.conclusion) && !cancelled()
         run: make buildstats
