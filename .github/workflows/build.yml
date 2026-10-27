@@ -167,10 +167,7 @@ jobs:
       - name: Build
         id: build
         if: steps.build-restore.outputs.cache-hit != 'true'
-        run: |
-          make setup
-          cat build/cmake/toolchain.cmake
-          make sdl3
+        run: make sdl3
 
       # - name: Dump build timings
       #   if: contains('failure success', steps.build.conclusion) && !cancelled()
