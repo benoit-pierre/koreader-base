@@ -878,7 +878,7 @@ set(CMAKE_CXX_FLAGS_INIT "$(strip $(CXXFLAGS))")
 
 # OBJC language (for SDL3 on macOS).
 $(if $(CCACHE),set(CMAKE_OBJC_COMPILER_LAUNCHER $(CCACHE)))
-set(CMAKE_OBJC_COMPILER $(REALCC))
+set(CMAKE_OBJC_COMPILER "$(REALCC)")
 
 # Release only flags: prevent CMake from messing
 # with our custom optimization level and flags.
