@@ -32,9 +32,9 @@ else()
     assert_var_defined(HOSTCC)
     assert_var_defined(HOSTCFLAGS)
 
-    # To recap, luajit builds:
-    # - set various XXX_CC variables from CROSS+CC, so we need to
-    #   override them or our absolute path CC will break the build.
+    # To recap, the LuaJIT's build system sets:
+    # - various variables from CROSS+CC, so we need to override them
+    #   all, or our CC with an absolute path will break the build.
     # - its HOST/TARGET_CFLAGS based on CFLAGS, so we need a neutral
     #   CFLAGS without arch.
 

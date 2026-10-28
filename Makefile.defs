@@ -306,7 +306,6 @@ ifdef ANDROID
   NM := $(call ensure_exe_abspath,llvm-nm)
   OBJCOPY := $(call ensure_exe_abspath,llvm-objcopy)
   RANLIB := $(call ensure_exe_abspath,llvm-ranlib)
-  READELF := $(call ensure_exe_abspath,llvm-readelf)
 else ifdef CHOST
   STRIP := $(call ensure_exe_abspath,$(CHOST)-strip)
   AR := $(call ensure_exe_abspath,$(CHOST)-ar)
@@ -314,36 +313,27 @@ else ifdef CHOST
   NM := $(call ensure_exe_abspath,$(CHOST)-nm)
   OBJCOPY := $(call ensure_exe_abspath,$(CHOST)-objcopy)
   RANLIB := $(call ensure_exe_abspath,$(CHOST)-ranlib)
-  READELF := $(call ensure_exe_abspath,$(CHOST)-readelf)
 else
   STRIP := $(call ensure_exe_abspath,strip)
   AR := $(call ensure_exe_abspath,ar)
   LD := $(call ensure_exe_abspath,ld)
   NM := $(call ensure_exe_abspath,nm)
-  RANLIB := $(call ensure_exe_abspath,ranlib)
   ifndef DARWIN
     OBJCOPY := $(call ensure_exe_abspath,objcopy)
-    READELF := $(call ensure_exe_abspath,readelf)
   endif
-  ifdef WIN32
-    RC := $(call ensure_exe_abspath,windres)
-  endif
+  RANLIB := $(call ensure_exe_abspath,ranlib)
 endif
 
 ifdef EMULATE_READER
-  HOSTSTRIP := $(STRIP)
   HOSTAR := $(AR)
   HOSTLD := $(LD)
   HOSTOBJCOPY := $(OBJCOPY)
   HOSTRANLIB := $(RANLIB)
-  HOSTREADELF := $(READELF)
 else
-  HOSTSTRIP := $(call ensure_exe_abspath,strip)
   HOSTAR := $(call ensure_exe_abspath,ar)
   HOSTLD := $(call ensure_exe_abspath,ld)
   HOSTOBJCOPY := $(call ensure_exe_abspath,objcopy)
   HOSTRANLIB := $(call ensure_exe_abspath,ranlib)
-  HOSTREADELF := $(call ensure_exe_abspath,readelf)
 endif
 
 # Base CFLAGS, without arch. We'll need it for luajit, because its
@@ -856,13 +846,12 @@ set(CMAKE_SHARED_LINKER_FLAGS_INIT "$(strip $(filter-out -shared -dynamiclib,$(L
 set(CMAKE_MODULE_LINKER_FLAGS_INIT $${CMAKE_SHARED_LINKER_FLAGS_INIT})
 
 # Tools.
-set(CMAKE_AR $(AR) CACHE FILEPATH "Archive")
-set(CMAKE_LD $(LD) CACHE FILEPATH "LD")
-set(CMAKE_NM $(NM) CACHE FILEPATH "NM")
-set(CMAKE_RANLIB $(RANLIB) CACHE FILEPATH "RanLib")
-set(CMAKE_READELF $(READELF) CACHE FILEPATH "ReadELF")
-set(CMAKE_RC_COMPILER $(RC) CACHE FILEPATH "Resource Compiler")
-set(CMAKE_STRIP true CACHE FILEPATH "Strip")
+set(CMAKE_AR $(AR) CACHE FILEPATH "archive")
+set(CMAKE_LD $(LD) CACHE FILEPATH "ld")
+set(CMAKE_NM $(NM) CACHE FILEPATH "nm")
+set(CMAKE_OBJCOPY $(OBJCOPY) CACHE FILEPATH "objcopy")
+set(CMAKE_RANLIB $(RANLIB) CACHE FILEPATH "ranlib")
+set(CMAKE_STRIP true CACHE FILEPATH "strip")
 
 # Set path(s) to search for libraries/binaries/headers.
 set(CMAKE_FIND_ROOT_PATH $(abspath $(STAGING_DIR)))
@@ -953,7 +942,6 @@ set(AR             "$(strip $(AR))")
 set(NM             "$(strip $(NM))")
 set(OBJCOPY        "$(strip $(OBJCOPY))")
 set(RANLIB         "$(strip $(RANLIB))")
-set(RC             "$(strip $(RC))")
 set(STRIP          "$(strip $(STRIP))")
 
 # Meson.
@@ -1068,7 +1056,7 @@ c = [CCACHE, '$(strip $(HOSTCC))']
 # c_ld
 cpp = [CCACHE, '$(strip $(HOSTCXX))']
 # cpp_ld
-ar = '$(strip $(HOSTSTRIP))'
+ar = '$(strip $(HOSTAR))'
 ranlib = '$(strip $(HOSTRANLIB))'
 strip = 'true'
 
